@@ -1,0 +1,4 @@
+interface:
+  display_name: "Agent Onboard"
+  short_description: "Onboard coding agents to a project by generating platform-specific instruction files."
+  default_prompt: "Use $agent-onboard to scan this project and generate agent instruction files."
