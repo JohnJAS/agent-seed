@@ -1,6 +1,6 @@
 ---
 name: agent-onboard
-description: Use when the user asks to make a repository AI-agent ready, create AGENTS.md/agents.d/CLAUDE.md, onboard Codex/Claude/OpenCode, interview a knowledgeable developer, distill tacit project knowledge, capture setup/build/test/debug breakpoints, prepare new agents or new developers to run a project, or generate project-specific agent instructions, automation runbooks, or reusable project skills.
+description: Use when the user asks to make a repository AI-agent ready, create AGENTS.md/agents.d/CLAUDE.md, onboard Codex/Claude/OpenCode, interview a knowledgeable developer, distill tacit project knowledge, capture setup/build/test/debug/tooling breakpoints, document approved skills or project scripts, prepare new agents or new developers to run a project, or generate project-specific agent instructions, automation runbooks, or reusable project skills.
 ---
 
 # Agent Onboard
@@ -18,6 +18,7 @@ The output files are internal engineering guides, not consulting reports.
 - Do not write guessed commands or conventions as facts.
 - Preserve the source of knowledge: repository evidence, owner-confirmed fact, operational preference, risk judgment, or unknown.
 - Capture automation blockers as explicit breakpoints with owner-confirmed fixes.
+- Capture approved skills, project scripts, and internal tools with clear trigger conditions and safety rules.
 - Distill tacit knowledge into executable instructions, not background explanation.
 - Keep generated files short, direct, and repository-specific.
 - Preserve any existing instruction files unless the user confirms replacement.
@@ -37,6 +38,7 @@ If the user is a knowledgeable maintainer, senior developer, tech lead, or opera
 
 - Which workflows should a new agent perform without rediscovering project knowledge?
 - Which parts of the project usually require a familiar human to explain?
+- Which existing skills, scripts, or internal tools should agents use for common tasks?
 - Is the desired output only `AGENTS.md`, or also `agents.d/` and a reusable project skill?
 
 ### 1. Inspect Existing Agent Instructions
@@ -75,6 +77,12 @@ Use `rg --files` first. Read files that exist from this list:
 - `Jenkinsfile`
 - `.opencode.yaml` or `.opencode/`
 - `.claude/settings.json`
+- `scripts/**`
+- `tools/**`
+- `bin/**`
+- `tasks/**`
+- `justfile`
+- `Taskfile.yml`
 - linter, formatter, and test configuration files
 
 Inspect top-level and second-level directory structure. Skip large generated or dependency folders such as `.git`, `node_modules`, `dist`, `build`, `target`, `.venv`, and `vendor`.
@@ -123,6 +131,7 @@ Use this knowledge map:
 
 - **Golden path**: The shortest reliable path from fresh checkout to a useful development loop.
 - **Bootstrap blockers**: Local tools, versions, credentials, services, data, network access, generated files, and machine-specific assumptions.
+- **Tooling inventory**: Approved skills, scripts, CLIs, code generators, validators, and internal tools agents should use instead of improvising.
 - **Architecture map**: Module boundaries, key entry points, data flow, ownership boundaries, and where not to make cross-cutting changes.
 - **Change recipes**: Where to edit for common tasks, which files must change together, and which checks prove the change worked.
 - **Debug playbooks**: Common symptoms, logs to inspect, diagnostic commands, likely causes, and recovery steps.
@@ -144,7 +153,56 @@ Convert knowledge into agent-usable instructions:
 - Do not keep long explanations unless they prevent a likely wrong edit.
 - Do not include secrets, personal machine paths, private account names, or one-off incident logs.
 
-### 6. Capture Automation Breakpoints
+### 6. Capture Tooling And Skill Inventory
+
+For knowledge-distillation onboarding, explicitly capture reusable tools before generating files:
+
+```markdown
+## Approved Skills
+- Skill:
+- Use when:
+- Required inputs:
+- Must read before use:
+- Do not use when:
+- Expected output:
+- Safety level:
+
+## Project Scripts
+- Script path:
+- Purpose:
+- Use when:
+- Command:
+- Inputs or arguments:
+- Expected success signal:
+- Common failure:
+- Safety level:
+```
+
+For each approved skill, record:
+
+- Exact skill name or invocation phrase, such as `$gitpush` or `$project-onboard`.
+- Task types that should trigger it.
+- Required context or files to read before invoking it.
+- Cases where the skill is inappropriate or too risky.
+- Expected artifact, output, or handoff result.
+
+For each project script or internal tool, record:
+
+- Stable path or command.
+- Whether it replaces a manual workflow an agent might otherwise invent.
+- Required working directory, arguments, environment variables, services, or generated files.
+- Expected success signal and common failure recovery.
+- Safety level: autonomous, ask first, or never run.
+
+Ask the owner targeted questions when scripts or skills are implied but not documented:
+
+- "Are there existing skills agents should invoke for commits, reviews, migrations, docs, release work, or debugging?"
+- "Which scripts should agents use instead of manually editing generated files or running raw tool commands?"
+- "Which script arguments are safe defaults, and which require human confirmation?"
+- "What output tells the agent the script succeeded?"
+- "When should the agent avoid this skill or script and escalate instead?"
+
+### 7. Capture Automation Breakpoints
 
 For automation-ready or knowledge-distillation onboarding, build a checkpoint table before generating files:
 
@@ -181,7 +239,7 @@ When evidence is missing, ask the owner for executable answers. Prefer questions
 
 Do not collapse breakpoints into vague advice. Each captured breakpoint should help a future agent continue without rediscovering the same failure.
 
-### 7. Ask Owner Questions
+### 8. Ask Owner Questions
 
 Ask 3-8 questions per round. Prefer fewer questions when repository evidence is strong. Continue with another focused round when the answers reveal missing bootstrap, architecture, change, debug, review, or risk knowledge.
 
@@ -191,6 +249,7 @@ Prioritize:
 - Environment setup, runtime versions, package manager versions, local service startup, seed data, secrets, and offline/online requirements.
 - Expected success signals for install, run, build, and test steps.
 - Known failure modes and the owner-approved debug or recovery steps.
+- Approved existing skills and project scripts, including when to use them and when not to.
 - Whether tests and CI are trusted.
 - High-risk modules, data flows, or workflows.
 - Directories agents should avoid or treat carefully.
@@ -204,9 +263,9 @@ Prioritize:
 
 Do not ask all questions at once if the answer will be hard to provide. Group related command questions together when that reduces back-and-forth.
 
-### 8. Generate Agent Knowledge Assets
+### 9. Generate Agent Knowledge Assets
 
-Always generate `AGENTS.md`. Generate additional platform files based on which platforms the user works with (asked in Step 7). If the user did not specify, generate both `AGENTS.md` and `CLAUDE.md` by default.
+Always generate `AGENTS.md`. Generate additional platform files based on which platforms the user works with (asked in Step 8). If the user did not specify, generate both `AGENTS.md` and `CLAUDE.md` by default.
 
 For knowledge-distillation onboarding, also generate `agents.d/` when the distilled knowledge would make `AGENTS.md` too long or when the user wants reusable onboarding assets.
 
@@ -222,6 +281,7 @@ Generate this structure:
 ## Commands
 ## Environment Setup
 ## Automation Runbook
+## Approved Skills And Tools
 ## agents.d Index
 ## Repository Map
 ## Development Rules
@@ -244,6 +304,7 @@ Section guidance:
 - `Commands`: Include only commands found in project files or confirmed by the owner.
 - `Environment Setup`: List prerequisites, runtime versions, package manager setup, local services, required files, and environment variables. Do not include secret values.
 - `Automation Runbook`: Provide the shortest confirmed path from fresh checkout to running, building, and testing. Include expected success signals.
+- `Approved Skills And Tools`: List approved skill invocations, project scripts, and internal tools, or point to `agents.d/tooling.md`.
 - `agents.d Index`: Link to split-out knowledge files when generated. Omit this section when no `agents.d/` files are generated.
 - `Repository Map`: Describe important directories and boundaries.
 - `Development Rules`: Capture project-specific style, architecture, dependency, and review rules.
@@ -273,6 +334,7 @@ Recommended structure:
 ```text
 agents.d/
   bootstrap.md
+  tooling.md
   development-loop.md
   architecture-map.md
   debug-playbook.md
@@ -284,6 +346,7 @@ agents.d/
 File guidance:
 
 - `bootstrap.md`: Fresh checkout, prerequisites, environment files, local services, seed data, and success signals.
+- `tooling.md`: Approved skills, scripts, CLIs, code generators, validators, safety levels, inputs, outputs, and failure recovery.
 - `development-loop.md`: Daily run/build/test/lint commands, fast checks, slow checks, and when each is required.
 - `architecture-map.md`: Entry points, module boundaries, data flow, generated code, and files that change together.
 - `debug-playbook.md`: Symptom -> diagnosis -> recovery tables with logs and commands.
@@ -346,6 +409,7 @@ description: Use when working in <project>, especially for setup, running, build
 
 ## Read First
 ## Bootstrap
+## Approved Skills And Tools
 ## Development Loop
 ## Change Recipes
 ## Debugging
@@ -354,19 +418,19 @@ description: Use when working in <project>, especially for setup, running, build
 ## Escalate To Human
 ```
 
-### 9. Validate With A Fresh-Agent Dry Run
+### 10. Validate With A Fresh-Agent Dry Run
 
 Before finishing knowledge-distillation onboarding, simulate how a fresh agent would use the generated assets:
 
 1. Start from a fresh checkout mental model: the agent only knows the repository, `AGENTS.md`, optional `agents.d/`, and optional project skill.
-2. Walk through bootstrap, run, build, test, debug, a representative change recipe, and human-review handoff.
+2. Walk through bootstrap, approved skills/tools selection, run, build, test, debug, a representative change recipe, and human-review handoff.
 3. Mark any step that still relies on "ask someone who knows" as a remaining breakpoint.
 4. Ask the owner targeted follow-up questions for remaining breakpoints when practical.
 5. Update the generated assets with resolved answers.
 
 Do not claim the onboarding is automation-ready unless the dry run has a clear next action for each known failure or an explicit escalation rule.
 
-### 10. Self-Review Before Finishing
+### 11. Self-Review Before Finishing
 
 Check each generated file for:
 
@@ -378,10 +442,13 @@ Check each generated file for:
 - Automation permissions that are unclear: autonomous, ask first, or never run.
 - Knowledge entries without a source label when the distinction matters.
 - Tacit knowledge left as explanation instead of executable instructions.
+- Approved skills or scripts without trigger conditions, inputs, expected output, and safety level.
+- Manually described workflows that should instead point to an approved script or tool.
 - `AGENTS.md` becoming too long when the content should be split into `agents.d/`.
 - Missing testing or verification instructions.
 - Missing human-review handoff criteria for automation-ready onboarding.
 - Missing change recipes for common work if the user asked for new agents or new developers to become productive.
+- Missing tooling inventory when repository scripts, code generators, validators, or user-mentioned skills exist.
 - Missing fresh-agent dry run results for knowledge-distillation onboarding.
 - Missing risk areas.
 - Contradictions between repository evidence and owner answers.

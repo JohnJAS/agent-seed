@@ -1,4 +1,4 @@
 interface:
   display_name: "Agent Onboard"
-  short_description: "Distill senior project knowledge into AGENTS.md, agents.d, runbooks, and skills."
-  default_prompt: "Use $agent-onboard to interview the knowledgeable developer, scan this project, distill setup/build/test/debug knowledge, and generate AGENTS.md plus agents.d or a project skill if useful."
+  short_description: "Distill senior project knowledge, approved skills, scripts, runbooks, and agents.d."
+  default_prompt: "Use $agent-onboard to interview the knowledgeable developer, scan this project, distill setup/build/test/debug/tooling knowledge, and generate AGENTS.md plus agents.d or a project skill if useful."
