@@ -1,4 +1,4 @@
 interface:
   display_name: "Agent Onboard"
-  short_description: "Onboard coding agents to a project by generating platform-specific instruction files."
-  default_prompt: "Use $agent-onboard to scan this project and generate agent instruction files."
+  short_description: "Distill senior project knowledge into AGENTS.md, agents.d, runbooks, and skills."
+  default_prompt: "Use $agent-onboard to interview the knowledgeable developer, scan this project, distill setup/build/test/debug knowledge, and generate AGENTS.md plus agents.d or a project skill if useful."
