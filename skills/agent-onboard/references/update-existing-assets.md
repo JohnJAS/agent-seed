@@ -1,0 +1,79 @@
+# Update Existing Assets
+
+Use this reference when the user adds reusable project knowledge after initial onboarding.
+
+Trigger phrases include "remember this", "add this to AGENTS.md", "update agents.d", "we found another debug step", "this script should be used for X", or any request to preserve newly discovered setup/build/test/debug/tooling knowledge.
+
+## Update Flow
+
+1. Read existing `AGENTS.md`, relevant `agents.d/` files, platform files, and any project-specific skill before editing.
+2. Classify the knowledge into the right home.
+3. Preserve or add source labels.
+4. Convert raw anecdotes into executable instructions, recipes, playbooks, or escalation triggers.
+5. Use the smallest coherent edit; do not rewrite entire onboarding files unless the structure is already broken.
+6. Exclude secrets, private account identifiers, one-off personal machine paths, and temporary incident chatter.
+7. If new knowledge contradicts existing assets, call out the conflict and ask the owner which rule wins before editing.
+8. After updating, run the relevant fresh-agent dry-run slice for the affected path.
+
+## Classification
+
+Place knowledge according to where a future agent will look first:
+
+- Entry rules, high-level workflow, and links: `AGENTS.md`.
+- Fresh checkout, prerequisites, environment files, local services, seed data: `agents.d/bootstrap.md`.
+- Approved skills, scripts, CLIs, code generators, validators, safety levels: `agents.d/tooling.md`.
+- Daily run/build/test/lint commands, fast checks, slow checks: `agents.d/development-loop.md`.
+- Entry points, module boundaries, data flow, generated code, files that change together: `agents.d/architecture-map.md`.
+- Failure symptoms, diagnostics, logs, recovery steps: `agents.d/debug-playbook.md`.
+- Common tasks, likely files, required tests, review notes: `agents.d/change-recipes.md`.
+- Handoff evidence, reviewer expectations, "done" criteria: `agents.d/review-handoff.md`.
+- Dangerous workflows, invariants, migrations, security/cost/data risks, escalation triggers: `agents.d/risk-areas.md`.
+- Repeated triggerable workflows: the project-specific skill.
+- Platform-specific behavior: `CLAUDE.md`, `GEMINI.md`, `.opencode/`, or other platform file.
+
+If a piece of knowledge fits multiple files, keep the detailed rule in one file and link to it from the entry point. Avoid duplication.
+
+## Source Labels
+
+Preserve labels such as:
+
+- `Repo-confirmed`
+- `Owner-confirmed`
+- `Observed during run`
+- `Preference`
+- `Risk judgment`
+- `Unknown`
+
+If the source matters but is missing, ask. If asking would block a minor edit, mark it `Unknown` and include the unresolved question in `Missing Context`.
+
+## Distill New Knowledge
+
+Convert:
+
+- "I usually fix this by..." into a symptom -> diagnosis -> recovery playbook.
+- "Always be careful with..." into a risk invariant or escalation rule.
+- "Use this script for..." into a tooling entry with trigger, command, inputs, output, success signal, and safety level.
+- "This failed because..." into a debug entry only if the failure is likely reusable.
+- "Before review I check..." into review-handoff evidence or senior-review heuristics.
+
+Do not append chat transcript. Write the future-facing instruction.
+
+## Conflict Handling
+
+When new knowledge conflicts with existing instructions:
+
+1. Identify the exact files and rules in conflict.
+2. Ask which one is current.
+3. Update the losing rule or move it to historical context only if that history prevents future mistakes.
+4. Verify there is not a second stale copy elsewhere.
+
+Never silently pick a rule when the conflict could affect setup, tests, data, security, releases, or review.
+
+## Minimal Diff Guidelines
+
+- Keep headings stable when possible.
+- Add one focused subsection or table row rather than reformatting a whole file.
+- Preserve existing tone and structure.
+- Remove stale duplicated guidance only when needed to avoid contradiction.
+- Update `AGENTS.md` index links when a new `agents.d/` file is added.
+- Update the project-specific skill only when the knowledge affects triggerable workflows or required read order.

@@ -1,0 +1,140 @@
+# Knowledge Distillation
+
+Use this reference while interviewing the knowledgeable project owner and converting tacit knowledge into reusable agent instructions.
+
+## Contents
+
+- Interview Loop
+- Knowledge Map
+- Source Labels
+- Tooling And Skill Inventory
+- Automation Checkpoints
+- High-Value Question Areas
+- Distillation Style
+
+## Interview Loop
+
+Ask 3-8 focused questions per round. Stop only when the next agent has a clear path for setup, development, verification, debugging, and human review, or when the remaining unknowns have explicit escalation rules.
+
+Prefer questions that produce executable answers:
+
+- What exact command or action should the agent run?
+- What working directory, inputs, files, environment variables, services, or accounts are required?
+- What output, port, log line, artifact, test result, or health check proves success?
+- What common failure symptom should the agent recognize?
+- What recovery step is approved?
+- May the agent do this autonomously, should it ask first, or must it never run this?
+
+Do not ask all categories at once. Group related command and environment questions when it reduces back-and-forth.
+
+## Knowledge Map
+
+Cover these categories unless the project scope makes one irrelevant:
+
+- **Golden path**: The shortest reliable path from fresh checkout to a useful development loop.
+- **Bootstrap blockers**: Local tools, versions, credentials, services, data, network access, generated files, and machine-specific assumptions.
+- **Tooling inventory**: Approved skills, scripts, CLIs, code generators, validators, and internal tools agents should use instead of improvising.
+- **Architecture map**: Module boundaries, key entry points, data flow, ownership boundaries, and where not to make cross-cutting changes.
+- **Change recipes**: Where to edit for common tasks, which files must change together, and which checks prove the change worked.
+- **Debug playbooks**: Common symptoms, logs to inspect, diagnostic commands, likely causes, and recovery steps.
+- **Risk invariants**: Rules that protect data, compatibility, migrations, releases, security, costs, or user-visible behavior.
+- **Review heuristics**: What a senior reviewer would inspect before trusting an agent's change.
+- **Escalation rules**: Situations where an agent must stop and ask a human instead of continuing.
+
+## Source Labels
+
+Label source when the distinction matters:
+
+- `Repo-confirmed`: Found directly in project files.
+- `Owner-confirmed`: Stated by the knowledgeable developer as an operational fact.
+- `Preference`: Team or maintainer preference.
+- `Risk judgment`: Human judgment about danger, blast radius, or review priority.
+- `Observed during run`: Learned from a command result in the current environment.
+- `Unknown`: Still unresolved.
+
+Do not turn inference into fact. When repo evidence and owner answers conflict, call out the conflict and ask which rule wins.
+
+## Tooling And Skill Inventory
+
+Use this structure before generating files:
+
+```markdown
+## Approved Skills
+- Skill:
+- Use when:
+- Required inputs:
+- Must read before use:
+- Do not use when:
+- Expected output:
+- Safety level:
+
+## Project Scripts
+- Script path:
+- Purpose:
+- Use when:
+- Command:
+- Inputs or arguments:
+- Expected success signal:
+- Common failure:
+- Safety level:
+```
+
+For each approved skill, script, or internal tool, capture exact name/path, trigger task, required inputs/context, working directory or arguments, success signal, common failure recovery, inappropriate use cases, expected output, and safety level: autonomous, ask first, or never run.
+
+Ask targeted questions when scripts or skills are implied but undocumented.
+
+## Automation Checkpoints
+
+Build this table before generating files:
+
+```markdown
+## Automation Checkpoints
+- Environment prerequisites:
+- Dependency installation:
+- Configuration and secrets:
+- Local services and databases:
+- First run / dev server:
+- Build:
+- Test:
+- Lint / format:
+- Common failures:
+- Debug workflow:
+- Human review handoff:
+```
+
+For each checkpoint, record:
+
+- Confirmed command or action.
+- Expected success signal, such as a port, log line, generated artifact, passing test output, or health check.
+- Required files, environment variables, local services, accounts, credentials, or data.
+- Known failure symptoms and exact recovery step.
+- Whether an agent may run the command autonomously, must ask first, or must never run it.
+
+Do not collapse breakpoints into vague advice. Each captured breakpoint should help a future agent continue without rediscovering the same failure.
+
+## High-Value Question Areas
+
+Prioritize:
+
+- Install, run, test, lint, format, build, and deploy commands.
+- Runtime versions, package manager versions, local service startup, seed data, secrets, and offline/online requirements.
+- Success signals for install, run, build, and test.
+- Known failure modes and owner-approved recovery.
+- Approved existing skills and project scripts, including when to use them and when not to.
+- Whether tests and CI are trusted.
+- High-risk modules, data flows, generated files, and migration rules.
+- Directories agents should avoid or treat carefully.
+- Coding conventions not encoded in tooling.
+- What "done" and "ready for human review" mean.
+- Common change recipes a new agent should be able to execute.
+- Senior-review heuristics and risk invariants not encoded in tests.
+- Agent platforms the user works with: Codex, Claude Code, OpenCode, Gemini, or other.
+
+## Distillation Style
+
+Convert knowledge into agent-usable instructions:
+
+- Prefer commands, paths, decision rules, expected signals, and "if symptom, do action" playbooks.
+- Include explanation only when it prevents a likely wrong edit.
+- Generalize anecdotes into durable rules or recipes.
+- Exclude secrets, personal machine paths, private account names, and one-off incident logs.
