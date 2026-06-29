@@ -14,7 +14,7 @@ Run the slices relevant to the change:
 
 - **Bootstrap**: Can a fresh agent install prerequisites, configure required files, start local services, and reach a known-ready signal?
 - **Tool selection**: Can it choose approved skills, bundled packages, platform skills, scripts, CLIs, generators, or validators without improvising?
-- **Bundled package installation**: Can it discover required packages and nested platform skills, read version pins from `bundled-skills.json`, follow the package README or installer, install or reference them safely, and verify availability?
+- **Bundled package installation**: Can it discover required packages and nested platform skills, read version pins from `bundled-packages.json`, follow the package README or installer, install or reference them safely, and verify availability?
 - **Development loop**: Can it run, build, test, lint, and format with expected success signals?
 - **Debugging**: For common failures, does it know which logs or commands to inspect and what recovery step is allowed?
 - **Change recipe**: For a representative task, does it know likely files, boundaries, coupled edits, and required checks?

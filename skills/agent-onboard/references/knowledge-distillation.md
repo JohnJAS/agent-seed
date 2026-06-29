@@ -118,7 +118,7 @@ Use this structure:
 
 Treat `packages/<package-name>/` as a candidate bundled package when it has durable project value and can be installed or referenced by future agents. Treat `skills/<skill-name>/SKILL.md`, `packages/**/.claude/skills/**/SKILL.md`, and `packages/**/.opencode/skills/**/SKILL.md` as platform skill entries, not necessarily as package roots. Do not mark an exploratory draft, private experiment, or incomplete package or skill as installable.
 
-When a bundled package comes from an external repository, pin its version in `bundled-skills.json` with source repo, ref or tag, immutable commit, package path, platform skill source paths, supported platforms, install command, verification command, and safety policy.
+When a bundled package comes from an external repository, pin its version in `bundled-packages.json` with source repo, ref or tag, immutable commit, package path, platform skill source paths, supported platforms, install command, verification command, and safety policy.
 
 Ask the owner:
 
@@ -129,7 +129,7 @@ Ask the owner:
 - How can the agent verify installation or availability per platform?
 - What inputs, credentials, or project context must exist before the package or platform skill is safe to use?
 
-When `bundled-skills.json` sets `default_install.offer_by_default`, proactively ask the user whether to run the project-local installer during onboarding. Always get approval before running an installer that modifies the target project. If installation writes outside the repository or into personal/global skill directories, require the user to explicitly request personal/global installation.
+When `bundled-packages.json` sets `default_install.offer_by_default`, proactively ask the user whether to run the project-local installer during onboarding. Always get approval before running an installer that modifies the target project. If installation writes outside the repository or into personal/global skill directories, require the user to explicitly request personal/global installation.
 
 ## Automation Checkpoints
 

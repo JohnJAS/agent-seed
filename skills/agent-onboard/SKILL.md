@@ -9,7 +9,7 @@ Onboard coding agents to a project by scanning the repository, interviewing the 
 
 Default to senior-developer knowledge distillation. The normal output is `AGENTS.md` plus `agents.d/`; add platform-specific files only for platforms the owner uses, and generate or propose a project-specific skill when repeated workflows should trigger automatically.
 
-This skill can also distribute bundled packages listed in `bundled-skills.json`. A bundled package may contain one or more platform-specific skills and may be configured as a default project-local install candidate, which means proactively offer to install it into the target repository and run it only after user approval.
+This skill can also distribute bundled packages listed in `bundled-packages.json`. A bundled package may contain one or more platform-specific skills and may be configured as a default project-local install candidate, which means proactively offer to install it into the target repository and run it only after user approval.
 
 The output files are internal engineering guides and automation runbooks, not consulting reports.
 
@@ -28,7 +28,7 @@ The output files are internal engineering guides and automation runbooks, not co
 - Distill tacit knowledge into executable instructions, recipes, playbooks, and handoff criteria, not background explanation.
 - Preserve existing instruction files unless the user confirms replacement.
 - Do not run install, build, test, migration, deploy, or service-start commands unless the user confirms they are safe in the current environment.
-- Install bundled packages according to `bundled-skills.json`: proactively offer configured default project-local installs, but get user approval before running installers that modify the target project.
+- Install bundled packages according to `bundled-packages.json`: proactively offer configured default project-local installs, but get user approval before running installers that modify the target project.
 - Do not install bundled platform skills from packages into personal/global Codex/Claude/OpenCode directories unless the user explicitly asks for personal/global installation.
 - Do not store secrets, personal machine paths, private account identifiers, one-off incident chatter, or temporary knowledge in onboarding assets.
 
@@ -77,7 +77,7 @@ Read existing files from this evidence set when present:
 - CI/CD: `.github/workflows/*`, `.gitlab-ci.yml`, `Jenkinsfile`.
 - Agent/tool config: `.opencode.yaml`, `.opencode/`, `.claude/settings.json`.
 - Automation folders: `scripts/**`, `tools/**`, `bin/**`, `tasks/**`.
-- Project-bundled packages and skills: `bundled-skills.json`, `packages/**/SKILL.md`, `packages/**/skills/**/SKILL.md`, `packages/**/.claude/skills/**/SKILL.md`, `packages/**/.opencode/skills/**/SKILL.md`, `skills/*/SKILL.md`, `skills/**/agents/openai.yaml`, and directly related `scripts/`, `references/`, or `assets/`.
+- Project-bundled packages and skills: `bundled-packages.json`, `packages/**/SKILL.md`, `packages/**/skills/**/SKILL.md`, `packages/**/.claude/skills/**/SKILL.md`, `packages/**/.opencode/skills/**/SKILL.md`, `skills/*/SKILL.md`, `skills/**/agents/openai.yaml`, and directly related `scripts/`, `references/`, or `assets/`.
 - Linter, formatter, type-checker, and test configuration.
 
 Use the project description and knowledge-holder role from Step 0 to decide which files need deeper reading.

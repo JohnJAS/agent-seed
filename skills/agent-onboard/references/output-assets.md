@@ -21,7 +21,7 @@ Generate platform-specific files only for platforms the owner uses or explicitly
 
 Generate or propose a project-specific skill when repeated workflows should trigger automatically, when the project will be onboarded repeatedly, or when distilled knowledge should be reused across future agents and checkouts.
 
-If `bundled-skills.json` exists in this skill, inspect it before proposing bundled packages or platform skills. Use it as the source of truth for vendored package versions, source commits, package paths, nested platform skill paths, install commands, and safety policy. Resolve `<package-dir>` from the configured package path before showing or running an installer.
+If `bundled-packages.json` exists in this skill, inspect it before proposing bundled packages or platform skills. Use it as the source of truth for vendored package versions, source commits, package paths, nested platform skill paths, install commands, and safety policy. Resolve `<package-dir>` from the configured package path before showing or running an installer.
 
 ## AGENTS.md
 
@@ -150,7 +150,7 @@ The project skill should:
 - Reserve official skill resource directories when useful: `scripts/` for executable helpers, `references/` for load-on-demand docs, and `assets/` for templates or resources used in outputs.
 - Use an additional `packages/` directory for versioned bundled packages that may contain multiple platform skills, scripts, commands, plugins, hooks, or assets.
 - Use an additional `skills/` directory only for direct repository-local skills whose folder is itself the skill root.
-- Track external bundled package versions in `bundled-skills.json`; pin tags to immutable commits and enumerate nested platform skills.
+- Track external bundled package versions in `bundled-packages.json`; pin tags to immutable commits and enumerate nested platform skills.
 - If the owner explicitly wants reserved empty directories, create them only in the generated project skill package and use the repository's existing placeholder convention, such as `.gitkeep`, when empty directories must be tracked.
 - Include only durable setup, run, build, test, debug, change, review, and handoff procedures.
 - Avoid secrets, personal machine paths, one-off troubleshooting logs, and broad AI behavior advice.
@@ -214,7 +214,7 @@ For each bundled package, document:
 - Verification step after install for each platform skill.
 - Safety level: autonomous, ask first, or never install automatically.
 
-When `bundled-skills.json` marks `default_install.offer_by_default` for a project-local package install, proactively offer to run the project-local installer during onboarding. Run it only after user approval because it may modify the target project. Do not install bundled platform skills into personal/global skill directories unless the user explicitly asks for personal/global installation.
+When `bundled-packages.json` marks `default_install.offer_by_default` for a project-local package install, proactively offer to run the project-local installer during onboarding. Run it only after user approval because it may modify the target project. Do not install bundled platform skills into personal/global skill directories unless the user explicitly asks for personal/global installation.
 
 If the platform supports direct repository-local skill loading, document that path instead of copying files.
 

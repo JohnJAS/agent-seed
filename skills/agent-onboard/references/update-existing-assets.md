@@ -22,7 +22,7 @@ Place knowledge according to where a future agent will look first:
 - Entry rules, high-level workflow, and links: `AGENTS.md`.
 - Fresh checkout, prerequisites, environment files, local services, seed data: `agents.d/bootstrap.md`.
 - Approved skills, scripts, CLIs, code generators, validators, safety levels: `agents.d/tooling.md`.
-- Bundled packages, platform skills, versions, installation targets, trigger conditions, written files, and verification: `agents.d/tooling.md`, `bundled-skills.json`, and the project-specific skill's `packages/` directory or bundled-package reference.
+- Bundled packages, platform skills, versions, installation targets, trigger conditions, written files, and verification: `agents.d/tooling.md`, `bundled-packages.json`, and the project-specific skill's `packages/` directory or bundled-package reference.
 - Daily run/build/test/lint commands, fast checks, slow checks: `agents.d/development-loop.md`.
 - Entry points, module boundaries, data flow, generated code, files that change together: `agents.d/architecture-map.md`.
 - Failure symptoms, diagnostics, logs, recovery steps: `agents.d/debug-playbook.md`.
@@ -80,4 +80,4 @@ Never silently pick a rule when the conflict could affect setup, tests, data, se
 - Update `AGENTS.md` index links when a new `agents.d/` file is added.
 - Update the project-specific skill only when the knowledge affects triggerable workflows or required read order.
 - Add or update bundled packages only when reusable workflows need distributed files or nested platform skills; otherwise document the workflow as an approved tool or recipe.
-- Update `bundled-skills.json` whenever a vendored package or nested platform skill is added, removed, upgraded, or re-pinned.
+- Update `bundled-packages.json` whenever a vendored package or nested platform skill is added, removed, upgraded, or re-pinned.
