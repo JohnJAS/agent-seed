@@ -15,6 +15,7 @@ This repository contains the source and release tooling for the `agent-runbook-d
 |   |-- bundled-skills/    # Direct skills distributed by this skill
 |   |-- packages/          # Bundled multi-platform skill packages
 |   |-- bundled-skills.json
+|   |-- recommended-external-plugins.json
 |   `-- bundled-packages.json
 |-- tools/                 # Maintainer tooling, not included in the skill package
 |   |-- release.mjs
@@ -31,6 +32,7 @@ The release package is built from `skill/` only. Root-level files such as this R
 - `AGENTS.md` as a concise project entry point for future agents.
 - Focused `agents.d/` runbooks for bootstrap, tooling, architecture, change recipes, debugging, review handoff, risks, and missing context.
 - Optional platform-specific files such as `CLAUDE.md` or project-local skills when the owner uses those platforms.
+- Recommended external plugin guidance from configuration, using each platform's normal network-backed install flow instead of vendoring plugin internals.
 - Automation breakpoints and human review checkpoints that clarify when an agent can keep looping and when it must stop for approval.
 - Framework fingerprints for common, private, vendor, or internally named frameworks so agents do not guess at framework behavior.
 
@@ -91,4 +93,5 @@ Do not run the installer without explicit approval. It may write `.opencode/`, `
 - Do not edit generated files under `outputs/`.
 - Keep bundled direct skills registered in `skill/bundled-skills.json`.
 - Keep bundled packages registered in `skill/bundled-packages.json`.
+- Keep recommended external plugins registered in `skill/recommended-external-plugins.json`.
 - Run `make release` before publishing changes so the test and package build both exercise the current tree.

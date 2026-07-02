@@ -1,0 +1,45 @@
+{
+  "recommended_external_plugins": [
+    {
+      "name": "superpowers",
+      "display_name": "Superpowers",
+      "purpose": "Planning, test-driven development, debugging, code review, and branch-finishing workflows for coding agents.",
+      "use_when": "Recommend when the owner uses a supported agent platform and the plugin is not already visible in the current agent environment or project platform config.",
+      "do_not_vendor_unless_explicitly_requested": true,
+      "default_recommendation": {
+        "requires_network": true,
+        "requires_user_approval": true,
+        "safety_level": "ask-first"
+      },
+      "platforms": [
+        {
+          "platform": "codex",
+          "install_action": "Install Superpowers from the Codex plugin marketplace.",
+          "detection_evidence": [
+            "Superpowers appears in installed Codex plugins or available skills.",
+            "Project or environment guidance already says Superpowers is installed."
+          ],
+          "verification": "Confirm Superpowers appears in Codex plugins or available skills."
+        },
+        {
+          "platform": "claude",
+          "install_action": "Run /plugin install superpowers@claude-plugins-official.",
+          "detection_evidence": [
+            "Claude Code plugin list includes Superpowers.",
+            "Superpowers skills are already available in the Claude Code session."
+          ],
+          "verification": "Confirm Claude Code lists the Superpowers plugin or a fresh session recognizes Superpowers."
+        },
+        {
+          "platform": "opencode",
+          "install_action": "Add \"superpowers@git+https://github.com/obra/superpowers.git\" to the plugin array in opencode.json.",
+          "detection_evidence": [
+            "opencode.json already references superpowers.",
+            "OpenCode skill list includes Superpowers skills."
+          ],
+          "verification": "Confirm OpenCode loads the plugin and lists the Superpowers skills."
+        }
+      ]
+    }
+  ]
+}

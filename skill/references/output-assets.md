@@ -9,6 +9,7 @@ Use this reference before generating new onboarding files.
 - agents.d
 - CLAUDE.md
 - Project-Specific Skill
+- Recommended External Plugin Installation
 - Bundled Direct Skill Installation
 - Bundled Package Installation
 
@@ -21,6 +22,8 @@ Generate `agents.d/` by default for knowledge distillation. Skip it only when th
 Generate platform-specific files only for platforms the owner uses or explicitly requests, such as `CLAUDE.md`, `GEMINI.md`, or `.opencode/`. If platforms are unknown, ask before generating platform-specific files.
 
 Generate or propose a project-specific skill when repeated workflows should trigger automatically, when the project will be onboarded repeatedly, or when distilled knowledge should be reused across future agents and checkouts.
+
+Recommend external platform plugins when a mature cross-project tool should be installed through Codex, Claude Code, OpenCode, or another platform's normal network-backed plugin flow instead of being bundled into the generated project assets.
 
 If `bundled-skills.json` exists in this skill, inspect it before proposing bundled direct skills. Use it as the source of truth for direct skill source paths, supported platforms, target paths, overlays, default-offer rules, verification, and safety policy.
 
@@ -63,7 +66,7 @@ Section guidance:
 - `Commands`: Include only commands found in project files or confirmed by the owner.
 - `Environment Setup`: List prerequisites, runtime versions, package manager setup, local services, required files, and environment variables. Do not include secret values.
 - `Automation Runbook`: Provide the shortest confirmed path from fresh checkout to running, building, and testing. Include expected success signals.
-- `Approved Skills And Tools`: List approved skill invocations, project scripts, and internal tools, or point to `agents.d/tooling.md`.
+- `Approved Skills And Tools`: List approved skill invocations, recommended external plugins, project scripts, and internal tools, or point to `agents.d/tooling.md`.
 - `agents.d Index`: Link to split-out knowledge files when generated. Omit this section when no `agents.d/` files are generated.
 - `Repository Map`: Describe important directories and boundaries.
 - `Development Rules`: Capture project-specific style, architecture, dependency, and review rules.
@@ -103,7 +106,7 @@ agents.d/
 File guidance:
 
 - `bootstrap.md`: Fresh checkout, prerequisites, environment files, local services, seed data, and success signals.
-- `tooling.md`: Approved skills, scripts, CLIs, code generators, validators, safety levels, inputs, outputs, and failure recovery.
+- `tooling.md`: Approved skills, recommended external plugins, scripts, CLIs, code generators, validators, safety levels, inputs, outputs, and failure recovery.
 - `development-loop.md`: Daily run/build/test/lint commands, fast checks, slow checks, and when each is required.
 - `architecture-map.md`: Entry points, module boundaries, data flow, generated code, and files that change together.
 - `debug-playbook.md`: Symptom -> diagnosis -> recovery tables with logs and commands.
@@ -210,6 +213,24 @@ description: Use when working in <project>, especially for setup, running, build
 ## Bundled Direct Skills
 ## Bundled Packages
 ```
+
+## Recommended External Plugin Installation
+
+External plugin recommendations are guidance, not bundled assets. Do not add them to `bundled-skills.json` or `bundled-packages.json` unless the owner explicitly changes the requirement to vendoring.
+
+Use `recommended-external-plugins.json` as the source of truth for known external plugin recommendations. For each configured plugin that matches the owner's platform and is not already available, copy the relevant configured fields into the generated guidance instead of writing plugin-specific prose by hand.
+
+When recommending external plugins in `AGENTS.md`, `agents.d/tooling.md`, or a generated project skill, include:
+
+- Plugin name and purpose.
+- Platforms it applies to.
+- How to detect whether it is already available.
+- The platform-native install action.
+- Whether installation requires network access and user approval.
+- Verification after installation.
+- A clear note that the plugin is recommended externally and is not vendored into `bundled-skills.json`, `bundled-packages.json`, or project-local skill folders.
+
+Use the configured `install_action`, `detection_evidence`, `verification`, and `default_recommendation` fields for platform-native instructions. Do not run an install action automatically when the config marks it as requiring network access or user approval.
 
 ## Bundled Direct Skill Installation
 

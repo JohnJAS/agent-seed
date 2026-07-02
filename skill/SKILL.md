@@ -1,6 +1,6 @@
 ---
 name: agent-runbook-distiller
-description: Use when the user asks to distill repository evidence and owner knowledge into agent runbooks, make a repository AI-agent ready, generate or update AGENTS.md/agents.d/CLAUDE.md, prepare Codex/Claude/OpenCode to work in an existing codebase, identify common or private framework conventions during repository scans, capture project setup/build/test/debug/tooling knowledge from a knowledgeable developer, define human review checkpoints for agent self-directed development loops, install or document bundled packages or platform skills, or add newly discovered project knowledge to reusable agent guidance assets.
+description: Use when the user asks to distill repository evidence and owner knowledge into agent runbooks, make a repository AI-agent ready, generate or update AGENTS.md/agents.d/CLAUDE.md, prepare Codex/Claude/OpenCode to work in an existing codebase, identify common or private framework conventions during repository scans, capture project setup/build/test/debug/tooling knowledge from a knowledgeable developer, define human review checkpoints for agent self-directed development loops, recommend configured external agent plugins, install or document bundled packages or platform skills, or add newly discovered project knowledge to reusable agent guidance assets.
 ---
 
 # Agent Runbook Distiller
@@ -10,6 +10,8 @@ Distill repository evidence and owner knowledge into executable agent runbooks, 
 Default to senior-developer knowledge distillation. The normal output is `AGENTS.md` plus `agents.d/`; add platform-specific files only for platforms the owner uses, and generate or propose a project-specific skill when repeated workflows should trigger automatically.
 
 This skill can also distribute bundled direct skills listed in `bundled-skills.json` and bundled packages listed in `bundled-packages.json`. A bundled direct skill is a simple skill directory copied into supported project-local platform paths. A bundled package may contain one or more platform-specific skills and may be configured as a default project-local install candidate. Proactively offer default installs, but run them only after user approval.
+
+Treat external agent workflow suites listed in `recommended-external-plugins.json` as recommended platform plugins, not bundled packages, unless the user explicitly asks to vendor them. If a configured plugin applies to the owner's platform and is not visible in the current agent environment or project platform config, recommend installing it through the platform's normal network-backed plugin flow instead of copying its internals into the project.
 
 The output files are internal engineering guides and automation runbooks, not consulting reports.
 
@@ -22,7 +24,7 @@ The output files are internal engineering guides and automation runbooks, not co
 - Do not write guessed commands or conventions as facts.
 - Preserve the source of knowledge: repository evidence, owner-confirmed fact, operational preference, risk judgment, observed run result, or unknown.
 - Capture automation blockers as explicit breakpoints with owner-confirmed fixes or escalation rules.
-- Capture approved skills, project scripts, and internal tools with trigger conditions, required inputs, success signals, and safety levels.
+- Capture approved skills, recommended external plugins, project scripts, and internal tools with trigger conditions, required inputs, success signals, and safety levels.
 - Capture bundled direct skills with source path, supported platforms, target paths, trigger conditions, default-offer rules, verification, and safety rules.
 - Capture bundled packages and their platform skills with version, source, install target, trigger conditions, required inputs, verification, and safety rules.
 - Update existing onboarding assets when reusable project knowledge appears during later agent work.
@@ -39,7 +41,7 @@ The output files are internal engineering guides and automation runbooks, not co
 
 Read only the reference file needed for the current phase:
 
-- For interview categories, source labels, tooling inventory, bundled direct skills, bundled packages, platform skills, version pins, and automation breakpoint capture, read `references/knowledge-distillation.md`.
+- For interview categories, source labels, tooling inventory, recommended external plugins, bundled direct skills, bundled packages, platform skills, version pins, and automation breakpoint capture, read `references/knowledge-distillation.md`; when external plugins are relevant, also inspect `recommended-external-plugins.json`.
 - For uncommon, private, vendor, or internally named frameworks, or when the user mentions a framework the model may not know well, read `references/framework-fingerprints.md`.
 - For `AGENTS.md`, `agents.d/`, `CLAUDE.md`, project-specific skill structures, resource directories, bundled direct skills, bundled packages, platform skills, and default project-local installation, read `references/output-assets.md` before generating files.
 - When the user adds knowledge after initial onboarding or asks to update existing instructions, read `references/update-existing-assets.md`.
@@ -62,7 +64,7 @@ Determine the target project root before scanning:
 - If the current working directory is this `agent-runbook-distiller` skill, another skill source directory, `$CODEX_HOME`, or a Codex plugin/cache directory, do not scan it as the target project. Ask for the target project path.
 - Keep all repository scans, instruction-file checks, and evidence reads inside the target root unless the user explicitly asks to inspect an external dependency, installed skill, or package source.
 
-Ask early which workflows should become agent-runnable, which parts usually require a familiar human, which skills/scripts/tools agents should use, whether any bundled packages or platform skills should be created or installed, which agent platforms matter, and whether to generate a reusable project skill now or only propose its shape.
+Ask early which workflows should become agent-runnable, which parts usually require a familiar human, which skills/scripts/tools agents should use, whether any external plugins should be recommended, whether any bundled packages or platform skills should be created or installed, which agent platforms matter, and whether to generate a reusable project skill now or only propose its shape.
 
 ### 1. Inspect Existing Agent Instructions
 
@@ -137,6 +139,7 @@ Normal scope:
 - `agents.d/` as the default home for split runbooks, maps, recipes, playbooks, risks, and handoff rules.
 - Platform-specific files such as `CLAUDE.md`, `GEMINI.md`, or `.opencode/` only when the owner uses or requests those agents.
 - A project-specific skill recommendation, and the skill itself when repeated workflows should be shared across future agents or checkouts.
+- Recommended external plugins when a mature platform plugin should be installed through the owner's normal network-backed plugin flow instead of vendored into the generated assets.
 - Bundled direct skills when simple reusable workflows should be copied into project-local Codex, Claude Code, or OpenCode skill directories.
 - Bundled packages or bundled platform skills when reusable sub-workflows should be distributed with the onboarding package.
 
@@ -179,6 +182,7 @@ Check generated or updated files for:
 - Missing source labels where repo evidence and owner judgment differ.
 - Tacit knowledge left as explanation instead of executable instructions.
 - Approved skills or scripts without trigger conditions, inputs, expected output, and safety level.
+- Recommended external plugins documented as vendored assets or automatic installs instead of ask-first network-backed platform installs.
 - Bundled direct skills without platform target paths, default-offer rules, existing-target conflict handling, verification, or detected/requested platform gating.
 - Manual workflow prose that should point to an approved script or tool.
 - `AGENTS.md` becoming too long when content belongs in `agents.d/`.

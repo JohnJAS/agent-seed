@@ -8,6 +8,7 @@ Use this reference while interviewing the knowledgeable project owner and conver
 - Knowledge Map
 - Source Labels
 - Tooling And Skill Inventory
+- Recommended External Plugins
 - Bundled Direct Skills, Packages, And Platform Skills
 - Automation Checkpoints
 - High-Value Question Areas
@@ -34,7 +35,7 @@ Cover these categories unless the project scope makes one irrelevant:
 
 - **Golden path**: The shortest reliable path from fresh checkout to a useful development loop.
 - **Bootstrap blockers**: Local tools, versions, credentials, services, data, network access, generated files, and machine-specific assumptions.
-- **Tooling inventory**: Approved skills, bundled packages, platform skills, scripts, CLIs, code generators, validators, and internal tools agents should use instead of improvising.
+- **Tooling inventory**: Approved skills, recommended external plugins, bundled packages, platform skills, scripts, CLIs, code generators, validators, and internal tools agents should use instead of improvising.
 - **Framework inventory**: Common, private, vendor, or internally named frameworks; framework-owned files; generated-code boundaries; manifests; lifecycle hooks; required SDKs; and framework-specific commands.
 - **Architecture map**: Module boundaries, key entry points, data flow, ownership boundaries, and where not to make cross-cutting changes.
 - **Change recipes**: Where to edit for common tasks, which files must change together, and which checks prove the change worked.
@@ -84,6 +85,31 @@ Use this structure before generating files:
 For each approved skill, script, or internal tool, capture exact name/path, trigger task, required inputs/context, working directory or arguments, success signal, common failure recovery, inappropriate use cases, expected output, and safety level: autonomous, ask first, or never run.
 
 Ask targeted questions when scripts or skills are implied but undocumented.
+
+## Recommended External Plugins
+
+Capture mature cross-project agent workflow suites as recommended external plugins when they should stay installed through the platform's own network-backed plugin flow instead of being vendored into the generated assets. Use `recommended-external-plugins.json` as the source of truth for known external plugin recommendations.
+
+Use this structure:
+
+```markdown
+## Recommended External Plugins
+- Plugin:
+- Purpose:
+- Use when:
+- Applies to platforms:
+- Detection evidence:
+- Install action:
+- Requires network:
+- Requires user approval:
+- Verification:
+- Do not vendor because:
+- Safety level:
+```
+
+For each matching configured plugin, copy the relevant purpose, supported platform, install action, detection evidence, verification, network requirement, approval requirement, and safety level from `recommended-external-plugins.json`. Do not add a configured external plugin to `bundled-skills.json`, `bundled-packages.json`, or project-local skill folders unless the user explicitly asks to vendor it.
+
+Treat external plugin installation as ask-first when the config marks it as requiring network access or user approval. Record verification as the configured platform-specific smoke check.
 
 ## Bundled Direct Skills, Packages, And Platform Skills
 
