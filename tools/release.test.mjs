@@ -73,6 +73,26 @@ test("recommended external plugins config includes install metadata", async () =
   }
 });
 
+test("Codex default prompt tells agents to offer default bundled package installs", async () => {
+  const promptPath = path.join(process.cwd(), "skill", "agents", "openai.yaml");
+  const prompt = await readFile(promptPath, "utf8");
+
+  assert.match(prompt, /bundled-packages\.json/);
+  assert.match(prompt, /offer default/i);
+  assert.match(prompt, /approval/i);
+});
+
+test("core skill instructions require cross-platform default package install offers", async () => {
+  const skillPath = path.join(process.cwd(), "skill", "SKILL.md");
+  const skill = await readFile(skillPath, "utf8");
+
+  assert.match(skill, /Every onboarding run/i);
+  assert.match(skill, /bundled-packages\.json/);
+  assert.match(skill, /default_install\.offer_by_default/);
+  assert.match(skill, /Codex, Claude Code, OpenCode/);
+  assert.match(skill, /approval/i);
+});
+
 test("external plugin prose stays configuration driven", async () => {
   const rootDir = process.cwd();
   const configPath = path.join(rootDir, "skill", "recommended-external-plugins.json");
