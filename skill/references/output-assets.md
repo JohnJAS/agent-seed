@@ -23,6 +23,26 @@ Generate platform-specific files only for platforms the owner uses or explicitly
 
 Generate or propose a project-specific skill when repeated workflows should trigger automatically, when the project will be onboarded repeatedly, or when distilled knowledge should be reused across future agents and checkouts.
 
+## Knowledge Asset Write Mode
+
+Resolve the write mode before creating or editing `AGENTS.md`, `agents.d/`, `CLAUDE.md`, `.opencode/`, generated project skills, or `.agents/agent-runbook-distiller.json`.
+
+Persist the target project's mode in `.agents/agent-runbook-distiller.json`:
+
+```json
+{
+  "knowledge_asset_write_mode": "ask-each-change"
+}
+```
+
+Supported values:
+
+- `ask-each-change`: Ask before each knowledge asset file creation or edit. State the target file, reason, and intended change.
+- `agent-approve`: After the owner confirms the onboarding/update scope, create and edit in-scope knowledge assets autonomously. Still ask before conflicts, deletes, broad rewrites, install commands, hook changes, external network access, or personal/global directory writes.
+- `full-access`: Create, update, and reorganize knowledge assets directly inside the target project, then report the diff and verification. Still ask before secrets, production actions, destructive changes, install commands, hook changes, external network access, or personal/global directory writes.
+
+The current user request wins over the project config. If the user does not specify a mode, read `.agents/agent-runbook-distiller.json`. If the config is missing, default to `ask-each-change` and ask whether to create `.agents/agent-runbook-distiller.json` with the selected mode.
+
 Recommend external platform plugins when a mature cross-project tool should be installed through Codex, Claude Code, OpenCode, or another platform's normal network-backed plugin flow instead of being bundled into the generated project assets.
 
 If `bundled-skills.json` exists in this skill, inspect it before proposing bundled direct skills. Use it as the source of truth for direct skill source paths, supported platforms, target paths, overlays, default-offer rules, verification, and safety policy.

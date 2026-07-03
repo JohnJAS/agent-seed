@@ -93,6 +93,28 @@ test("core skill instructions require cross-platform default package install off
   assert.match(skill, /approval/i);
 });
 
+test("knowledge asset write mode is persistent and documented across write workflows", async () => {
+  const rootDir = process.cwd();
+  const files = [
+    path.join(rootDir, "skill", "SKILL.md"),
+    path.join(rootDir, "skill", "references", "output-assets.md"),
+    path.join(rootDir, "skill", "references", "update-existing-assets.md"),
+  ];
+
+  for (const filePath of files) {
+    const content = await readFile(filePath, "utf8");
+    assert.match(content, /\.agents\/agent-runbook-distiller\.json/, path.relative(rootDir, filePath));
+    assert.match(content, /knowledge_asset_write_mode/, path.relative(rootDir, filePath));
+    assert.match(content, /ask-each-change/, path.relative(rootDir, filePath));
+    assert.match(content, /agent-approve/, path.relative(rootDir, filePath));
+    assert.match(content, /full-access/, path.relative(rootDir, filePath));
+  }
+
+  const skill = await readFile(path.join(rootDir, "skill", "SKILL.md"), "utf8");
+  assert.match(skill, /default to `ask-each-change`/i);
+  assert.match(skill, /current user request wins/i);
+});
+
 test("external plugin prose stays configuration driven", async () => {
   const rootDir = process.cwd();
   const configPath = path.join(rootDir, "skill", "recommended-external-plugins.json");

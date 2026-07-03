@@ -4,16 +4,36 @@ Use this reference when the user adds reusable project knowledge after initial o
 
 Trigger phrases include "remember this", "add this to AGENTS.md", "update agents.d", "we found another debug step", "this script should be used for X", "install this project skill", "add this bundled skill", "add this bundled package", "add this platform skill", or any request to preserve newly discovered setup/build/test/debug/tooling knowledge.
 
+## Knowledge Asset Write Mode
+
+Resolve `knowledge_asset_write_mode` before editing existing assets. The current user request wins over the project config. If the user does not specify a mode, read `.agents/agent-runbook-distiller.json`. If it is missing, default to `ask-each-change` and ask whether to create `.agents/agent-runbook-distiller.json` with the selected mode.
+
+Persist the mode as:
+
+```json
+{
+  "knowledge_asset_write_mode": "ask-each-change"
+}
+```
+
+Supported values:
+
+- `ask-each-change`: Ask before each edit to `AGENTS.md`, `agents.d/`, `CLAUDE.md`, `.opencode/`, generated project skills, bundled manifests, or `.agents/agent-runbook-distiller.json`.
+- `agent-approve`: After the owner confirms the update scope, make minimal in-scope edits autonomously. Still ask before conflicts, deletes, broad rewrites, install commands, hook changes, external network access, or personal/global directory writes.
+- `full-access`: Make in-scope knowledge asset edits directly and report the diff plus fresh-agent dry-run result. Still ask before secrets, production actions, destructive changes, install commands, hook changes, external network access, or personal/global directory writes.
+
 ## Update Flow
 
-1. Read existing `AGENTS.md`, relevant `agents.d/` files, platform files, and any project-specific skill before editing.
-2. Classify the knowledge into the right home.
-3. Preserve or add source labels.
-4. Convert raw anecdotes into executable instructions, recipes, playbooks, or escalation triggers.
-5. Use the smallest coherent edit; do not rewrite entire onboarding files unless the structure is already broken.
-6. Exclude secrets, private account identifiers, one-off personal machine paths, and temporary incident chatter.
-7. If new knowledge contradicts existing assets, call out the conflict and ask the owner which rule wins before editing.
-8. After updating, run the relevant fresh-agent dry-run slice for the affected path.
+1. Resolve `knowledge_asset_write_mode` from the current request or `.agents/agent-runbook-distiller.json`.
+2. Read existing `AGENTS.md`, relevant `agents.d/` files, platform files, and any project-specific skill before editing.
+3. Classify the knowledge into the right home.
+4. Preserve or add source labels.
+5. Convert raw anecdotes into executable instructions, recipes, playbooks, or escalation triggers.
+6. Apply the resolved write mode before each file creation or edit.
+7. Use the smallest coherent edit; do not rewrite entire onboarding files unless the structure is already broken.
+8. Exclude secrets, private account identifiers, one-off personal machine paths, and temporary incident chatter.
+9. If new knowledge contradicts existing assets, call out the conflict and ask the owner which rule wins before editing.
+10. After updating, run the relevant fresh-agent dry-run slice for the affected path.
 
 ## Classification
 
