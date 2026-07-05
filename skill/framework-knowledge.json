@@ -8,11 +8,6 @@
         "nuw",
         "huawei nuwa",
         "huaweicloud nuwa",
-        "harmony",
-        "openharmony",
-        "arkui",
-        "arkts",
-        "鸿蒙",
         "女娲"
       ],
       "fingerprints": {
@@ -21,16 +16,6 @@
           "nuw",
           "huawei",
           "huaweicloud",
-          "harmony",
-          "openharmony",
-          "arkui",
-          "arkts",
-          "oh-package",
-          "build-profile",
-          "hvigor",
-          "ability",
-          "module.json5",
-          "app.json5",
           "generated",
           "generator",
           "schema",
@@ -43,11 +28,6 @@
           "service"
         ],
         "file_patterns": [
-          "oh-package.json5",
-          "build-profile.json5",
-          "hvigorfile.*",
-          "module.json5",
-          "app.json5",
           "*nuwa*",
           "*nuw*",
           "*schema*",
@@ -58,6 +38,86 @@
         ]
       },
       "knowledge_path": "references/frameworks/nuwa.md",
+      "project_local": {
+        "registry_paths": [
+          ".agents/framework-knowledge.json",
+          "agents.d/framework-knowledge.json"
+        ],
+        "knowledge_paths": [
+          "agents.d/frameworks/*.md",
+          "docs/agent-frameworks/*.md"
+        ]
+      },
+      "source_policy": {
+        "labels": [
+          "Preset",
+          "Repo-confirmed",
+          "Owner-confirmed",
+          "Inferred",
+          "Unknown"
+        ],
+        "preset_may_confirm_project_facts": false,
+        "conflicts_require_owner_resolution": true
+      },
+      "safety": {
+        "stay_inside_target_root": true,
+        "external_sdk_inspection_requires_user_request": true,
+        "generated_commands_require_repo_or_owner_confirmation": true
+      }
+    },
+    {
+      "name": "harmonyos",
+      "display_name": "HarmonyOS",
+      "aliases": [
+        "harmonyos",
+        "openharmony",
+        "harmony",
+        "鸿蒙",
+        "arkui",
+        "arkts",
+        "deveco",
+        "deveco cli",
+        "deveco studio"
+      ],
+      "fingerprints": {
+        "search_terms": [
+          "harmonyos",
+          "openharmony",
+          "harmony",
+          "鸿蒙",
+          "arkui",
+          "arkts",
+          "devecocli",
+          "deveco-toolbox",
+          "deveco-mcp-server",
+          "DevEco CLI",
+          "@deveco/deveco-cli",
+          "@deveco-codegenie/mcp",
+          "DevEco Studio",
+          "oh-package",
+          "build-profile",
+          "hvigor",
+          "ohpm",
+          "hdc",
+          "hilog",
+          "emulator",
+          "ability",
+          "module.json5",
+          "app.json5"
+        ],
+        "file_patterns": [
+          "oh-package.json5",
+          "build-profile.json5",
+          "hvigorfile.*",
+          "module.json5",
+          "app.json5",
+          "*devecocli*",
+          "*deveco-toolbox*",
+          "*deveco-mcp-server*",
+          "*deveco*"
+        ]
+      },
+      "knowledge_path": "references/frameworks/harmonyos.md",
       "project_local": {
         "registry_paths": [
           ".agents/framework-knowledge.json",

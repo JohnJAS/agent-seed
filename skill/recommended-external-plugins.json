@@ -40,6 +40,54 @@
           "verification": "Confirm OpenCode loads the plugin and lists the Superpowers skills."
         }
       ]
+    },
+    {
+      "name": "deveco-cli",
+      "display_name": "DevEco CLI",
+      "purpose": "HarmonyOS, OpenHarmony, ArkUI, and ArkTS project tooling for build, run, device/emulator access, hilog logs, local HarmonyOS docs, DevEco skills, and MCP syntax-check integration.",
+      "use_when": "Recommend by default when repository evidence or owner input indicates a HarmonyOS, OpenHarmony, ArkUI, ArkTS, DevEco Studio, DevEco Toolbox, deveco-toolbox, @deveco-codegenie/mcp, ohpm, hvigor, hdc, hilog, or devecocli application and the DevEco CLI is not already available.",
+      "do_not_vendor_unless_explicitly_requested": true,
+      "default_recommendation": {
+        "requires_network": true,
+        "requires_user_approval": true,
+        "safety_level": "ask-first",
+        "recommend_by_default_when": "HarmonyOS/OpenHarmony/ArkUI/ArkTS evidence is detected, including oh-package.json5, build-profile.json5, module.json5, app.json5, hvigorfile.*, @deveco/deveco-cli, devecocli, DevEco Studio, DevEco Toolbox, deveco-toolbox, @deveco-codegenie/mcp, ohpm, hdc, hilog, or emulator tooling."
+      },
+      "platforms": [
+        {
+          "platform": "codex",
+          "install_action": "Run npm install -g @deveco/deveco-cli@latest after user approval, then optionally run devecocli init --agent codex or devecocli init --mcp --agent codex --project <target-project> only with separate approval.",
+          "detection_evidence": [
+            "HarmonyOS manifests such as oh-package.json5, build-profile.json5, module.json5, or app.json5 exist in the target project.",
+            "Project files mention DevEco Studio, DevEco Toolbox, deveco-toolbox, deveco-mcp-server, @deveco-codegenie/mcp, devecocli, @deveco/deveco-cli, ohpm, hvigor, hdc, hilog, emulator, ArkUI, ArkTS, HarmonyOS, or OpenHarmony.",
+            "devecocli --version succeeds in the current environment.",
+            "Owner confirms the project is a HarmonyOS/OpenHarmony/ArkUI/ArkTS application."
+          ],
+          "verification": "Confirm devecocli --version succeeds, then use devecocli docs search or devecocli --help to verify local command availability without modifying the project."
+        },
+        {
+          "platform": "claude",
+          "install_action": "Run npm install -g @deveco/deveco-cli@latest after user approval, then optionally run devecocli init --agent claude or devecocli init --mcp --agent claude --project <target-project> only with separate approval.",
+          "detection_evidence": [
+            "HarmonyOS manifests such as oh-package.json5, build-profile.json5, module.json5, or app.json5 exist in the target project.",
+            "Project files mention DevEco Studio, DevEco Toolbox, deveco-toolbox, deveco-mcp-server, @deveco-codegenie/mcp, devecocli, @deveco/deveco-cli, ohpm, hvigor, hdc, hilog, emulator, ArkUI, ArkTS, HarmonyOS, or OpenHarmony.",
+            "devecocli --version succeeds in the current environment.",
+            "Owner confirms the project is a HarmonyOS/OpenHarmony/ArkUI/ArkTS application."
+          ],
+          "verification": "Confirm devecocli --version succeeds, then use devecocli docs search or devecocli --help to verify local command availability without modifying the project."
+        },
+        {
+          "platform": "opencode",
+          "install_action": "Run npm install -g @deveco/deveco-cli@latest after user approval, then optionally run devecocli init --agent opencode or devecocli init --mcp --agent opencode --project <target-project> only with separate approval.",
+          "detection_evidence": [
+            "HarmonyOS manifests such as oh-package.json5, build-profile.json5, module.json5, or app.json5 exist in the target project.",
+            "Project files mention DevEco Studio, DevEco Toolbox, deveco-toolbox, deveco-mcp-server, @deveco-codegenie/mcp, devecocli, @deveco/deveco-cli, ohpm, hvigor, hdc, hilog, emulator, ArkUI, ArkTS, HarmonyOS, or OpenHarmony.",
+            "devecocli --version succeeds in the current environment.",
+            "Owner confirms the project is a HarmonyOS/OpenHarmony/ArkUI/ArkTS application."
+          ],
+          "verification": "Confirm devecocli --version succeeds, then use devecocli docs search or devecocli --help to verify local command availability without modifying the project."
+        }
+      ]
     }
   ]
 }

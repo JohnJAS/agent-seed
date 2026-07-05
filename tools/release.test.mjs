@@ -73,6 +73,39 @@ test("recommended external plugins config includes install metadata", async () =
   }
 });
 
+test("recommended external plugins include DevEco CLI for HarmonyOS projects", async () => {
+  const configPath = path.join(process.cwd(), "skill", "recommended-external-plugins.json");
+  const config = JSON.parse(await readFile(configPath, "utf8"));
+  const deveco = config.recommended_external_plugins.find((plugin) => plugin.name === "deveco-cli");
+
+  assert.ok(deveco, "expected DevEco CLI recommendation");
+  assert.match(deveco.display_name, /DevEco CLI/);
+  assert.match(deveco.purpose, /HarmonyOS/);
+  assert.match(deveco.use_when, /HarmonyOS|OpenHarmony|ArkUI|ArkTS/);
+  assert.match(deveco.use_when, /DevEco Toolbox|deveco-toolbox|@deveco-codegenie\/mcp/);
+  assert.equal(deveco.default_recommendation.requires_network, true);
+  assert.equal(deveco.default_recommendation.requires_user_approval, true);
+  assert.equal(deveco.default_recommendation.safety_level, "ask-first");
+  assert.match(deveco.default_recommendation.recommend_by_default_when, /HarmonyOS/i);
+  assert.match(deveco.default_recommendation.recommend_by_default_when, /DevEco Toolbox|@deveco-codegenie\/mcp/);
+  assert.ok(deveco.platforms.some((platform) => /npm install -g @deveco\/deveco-cli@latest/.test(platform.install_action)));
+  assert.ok(deveco.platforms.some((platform) => platform.detection_evidence.some((entry) => /oh-package\.json5/.test(entry))));
+  assert.ok(deveco.platforms.some((platform) => platform.detection_evidence.some((entry) => /build-profile\.json5/.test(entry))));
+  assert.ok(deveco.platforms.some((platform) => platform.detection_evidence.some((entry) => /module\.json5/.test(entry))));
+  assert.ok(deveco.platforms.some((platform) => platform.detection_evidence.some((entry) => /DevEco Toolbox|deveco-toolbox|@deveco-codegenie\/mcp/.test(entry))));
+  assert.ok(deveco.platforms.some((platform) => platform.verification.includes("devecocli --version")));
+});
+
+test("recommended external plugins do not default to archived DevEco Toolbox", async () => {
+  const configPath = path.join(process.cwd(), "skill", "recommended-external-plugins.json");
+  const config = JSON.parse(await readFile(configPath, "utf8"));
+
+  assert.equal(
+    config.recommended_external_plugins.some((plugin) => /deveco-toolbox|DevEco Toolbox/i.test(`${plugin.name} ${plugin.display_name}`)),
+    false
+  );
+});
+
 test("Codex default prompt tells agents to offer default bundled package installs", async () => {
   const promptPath = path.join(process.cwd(), "skill", "agents", "openai.yaml");
   const prompt = await readFile(promptPath, "utf8");
@@ -119,10 +152,15 @@ test("external plugin prose stays configuration driven", async () => {
   const rootDir = process.cwd();
   const configPath = path.join(rootDir, "skill", "recommended-external-plugins.json");
   const skillPath = path.join(rootDir, "skill", "SKILL.md");
+  const frameworkPackPaths = new Set([
+    path.normalize(path.join(rootDir, "skill", "references", "frameworks", "nuwa.md")),
+    path.normalize(path.join(rootDir, "skill", "references", "frameworks", "harmonyos.md")),
+  ]);
   const config = JSON.parse(await readFile(configPath, "utf8"));
   const pluginTerms = config.recommended_external_plugins.flatMap((plugin) => [plugin.name, plugin.display_name]);
   const files = [path.join(rootDir, "README.md"), ...(await markdownFiles(path.join(rootDir, "skill")))]
-    .filter((filePath) => ![configPath, skillPath].map((allowedPath) => path.normalize(allowedPath)).includes(path.normalize(filePath)));
+    .filter((filePath) => ![configPath, skillPath].map((allowedPath) => path.normalize(allowedPath)).includes(path.normalize(filePath)))
+    .filter((filePath) => !frameworkPackPaths.has(path.normalize(filePath)));
 
   for (const filePath of files) {
     const content = await readFile(filePath, "utf8");
@@ -167,6 +205,9 @@ test("framework knowledge config registers valid built-in knowledge packs", asyn
   const nuwa = config.framework_knowledge.find((entry) => entry.name === "nuwa");
   assert.ok(nuwa, "expected Nuwa framework knowledge entry");
   assert.equal(nuwa.knowledge_path, "references/frameworks/nuwa.md");
+  const harmonyos = config.framework_knowledge.find((entry) => entry.name === "harmonyos");
+  assert.ok(harmonyos, "expected HarmonyOS framework knowledge entry");
+  assert.equal(harmonyos.knowledge_path, "references/frameworks/harmonyos.md");
 
   for (const entry of config.framework_knowledge) {
     assert.equal(typeof entry.name, "string");
@@ -213,6 +254,7 @@ test("framework-specific prose stays in framework knowledge packs", async () => 
   const allowedFiles = new Set([
     path.normalize(path.join(rootDir, "skill", "framework-knowledge.json")),
     path.normalize(path.join(rootDir, "skill", "references", "frameworks", "nuwa.md")),
+    path.normalize(path.join(rootDir, "skill", "references", "frameworks", "harmonyos.md")),
     path.normalize(path.join(rootDir, "skill", "references", "framework-fingerprints.md")),
     path.normalize(path.join(rootDir, "README.md")),
   ]);
@@ -228,6 +270,66 @@ test("framework-specific prose stays in framework knowledge packs", async () => 
       `${path.relative(rootDir, filePath)} hardcodes Nuwa prose outside framework knowledge routing`
     );
   }
+});
+
+test("HarmonyOS framework knowledge includes DevEco CLI tooling guidance", async () => {
+  const rootDir = process.cwd();
+  const configPath = path.join(rootDir, "skill", "framework-knowledge.json");
+  const harmonyosPath = path.join(rootDir, "skill", "references", "frameworks", "harmonyos.md");
+  const config = await readFile(configPath, "utf8");
+  const harmonyos = await readFile(harmonyosPath, "utf8");
+
+  assert.match(config, /devecocli/);
+  assert.match(config, /DevEco CLI/);
+  assert.match(harmonyos, /DevEco CLI/);
+  assert.match(harmonyos, /@deveco\/deveco-cli@latest/);
+  assert.match(harmonyos, /Node\.js >= 18/);
+  assert.match(harmonyos, /DevEco Studio >= 6\.1\.0/);
+  assert.match(harmonyos, /devecocli build/);
+  assert.match(harmonyos, /devecocli run/);
+  assert.match(harmonyos, /devecocli device list/);
+  assert.match(harmonyos, /devecocli emulator list/);
+  assert.match(harmonyos, /devecocli log/);
+  assert.match(harmonyos, /devecocli docs search/);
+  assert.match(harmonyos, /devecocli docs read/);
+  assert.match(harmonyos, /devecocli init --mcp/);
+  assert.match(harmonyos, /devecocli serve mcp/);
+  assert.match(harmonyos, /devecocli skills list/);
+  assert.match(harmonyos, /ask first/i);
+  assert.match(harmonyos, /Preset/);
+});
+
+test("HarmonyOS framework knowledge treats DevEco Toolbox as archived fallback tooling", async () => {
+  const rootDir = process.cwd();
+  const configPath = path.join(rootDir, "skill", "framework-knowledge.json");
+  const harmonyosPath = path.join(rootDir, "skill", "references", "frameworks", "harmonyos.md");
+  const config = await readFile(configPath, "utf8");
+  const harmonyos = await readFile(harmonyosPath, "utf8");
+
+  assert.match(config, /deveco-toolbox/);
+  assert.match(config, /@deveco-codegenie\/mcp/);
+  assert.match(harmonyos, /DevEco Toolbox/);
+  assert.match(harmonyos, /archived/i);
+  assert.match(harmonyos, /not recommend/i);
+  assert.match(harmonyos, /recommend DevEco CLI/i);
+  assert.match(harmonyos, /DevEco CLI/);
+  assert.match(harmonyos, /deveco-mcp-server/);
+  assert.match(harmonyos, /@deveco-codegenie\/mcp@beta/);
+  assert.match(harmonyos, /DEVECO_PATH/);
+  assert.match(harmonyos, /ask first/i);
+});
+
+test("Nuwa framework knowledge stays independent from HarmonyOS tooling", async () => {
+  const rootDir = process.cwd();
+  const configPath = path.join(rootDir, "skill", "framework-knowledge.json");
+  const nuwaPath = path.join(rootDir, "skill", "references", "frameworks", "nuwa.md");
+  const config = JSON.parse(await readFile(configPath, "utf8"));
+  const nuwa = config.framework_knowledge.find((entry) => entry.name === "nuwa");
+  const nuwaMarkdown = await readFile(nuwaPath, "utf8");
+  const nuwaTerms = [...nuwa.aliases, ...nuwa.fingerprints.search_terms, ...nuwa.fingerprints.file_patterns].join("\n");
+
+  assert.doesNotMatch(nuwaTerms, /harmony|openharmony|arkui|arkts|devecocli|deveco|oh-package|build-profile|hvigor|ohpm|hdc|hilog|module\.json5|app\.json5/i);
+  assert.doesNotMatch(nuwaMarkdown, /DevEco CLI|devecocli|@deveco\/deveco-cli|oh-package|build-profile|hvigor|ohpm|hdc|hilog/i);
 });
 
 async function markdownFiles(dir) {

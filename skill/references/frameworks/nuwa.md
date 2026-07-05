@@ -15,16 +15,16 @@ Use this built-in knowledge pack when repository evidence, owner input, or proje
 Search inside the target project root only. Combine owner-provided names with these terms:
 
 ```bash
-rg -n -i "nuwa|nuw|huawei|huaweicloud|harmony|openharmony|arkui|arkts|oh-package|build-profile|hvigor|ability|module\.json5|app\.json5|generator|generated|schema|dsl|lifecycle|route|router|page|component|service" <target-project-root>
-rg --files <target-project-root> | rg -i "nuwa|nuw|oh-package\.json5|build-profile\.json5|hvigorfile|module\.json5|app\.json5|schema|generated|generator|routes?|routers?|pages?|components?|services?|abilities?"
+rg -n -i "nuwa|nuw|huawei|huaweicloud|generator|generated|schema|dsl|lifecycle|route|router|page|component|service" <target-project-root>
+rg --files <target-project-root> | rg -i "nuwa|nuw|schema|generated|generator|routes?|routers?|pages?|components?|services?"
 ```
 
 Do not inspect installed SDKs, personal/global skill directories, plugin caches, or external framework source trees unless the user explicitly asks.
 
 ## Evidence To Inspect
 
-- Package and build metadata such as `package.json`, `oh-package.json5`, `build-profile.json5`, `hvigorfile.*`, Gradle/Maven files, lockfiles, and custom CLI wrappers.
-- App, module, route, page, ability, service, schema, DSL, generator, or plugin manifests.
+- Package and build metadata such as `package.json`, Gradle/Maven files, lockfiles, and custom CLI wrappers.
+- App, module, route, page, service, schema, DSL, generator, or plugin manifests.
 - Entry modules, lifecycle hooks, decorators, annotations, dependency injection setup, bridge/native integration, and resource folders.
 - Generated directories and files that should not be edited by hand.
 - Scripts for scaffold, generate, update, preview, simulator/device runs, build variants, validation, lint, and clean.
@@ -55,6 +55,7 @@ Ask only questions that repository evidence and project-local framework knowledg
 ## Do Not Guess
 
 - Do not assume Nuwa is ArkUI, HarmonyOS, OpenHarmony, or a generic web framework.
+- If repository evidence points only to HarmonyOS, OpenHarmony, ArkUI, ArkTS, or DevEco tooling, use the HarmonyOS framework knowledge pack instead of this Nuwa pack.
 - Do not write framework-specific commands as facts unless they appear in repository files or the owner confirms them.
 - Do not treat preset generated-file boundaries as confirmed. Ask the owner or cite repo evidence.
 - Do not turn temporary troubleshooting notes, secrets, personal paths, internal account names, or one-off incident chatter into reusable runbook content.
