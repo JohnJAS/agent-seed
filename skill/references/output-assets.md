@@ -45,9 +45,9 @@ The current user request wins over the project config. If the user does not spec
 
 Recommend external platform plugins when a mature cross-project tool should be installed through Codex, Claude Code, OpenCode, or another platform's normal network-backed plugin flow instead of being bundled into the generated project assets.
 
-If `bundled-skills.json` exists in this skill, inspect it before proposing bundled direct skills. Use it as the source of truth for direct skill source paths, supported platforms, target paths, overlays, default-offer rules, verification, and safety policy.
+If `bundled-skills.json` exists in this skill, inspect it before proposing bundled direct skills. Use it as the source of truth for direct skill source paths, supported platforms, target paths, overlays, activation policy, default-offer rules, verification, and safety policy.
 
-If `bundled-packages.json` exists in this skill, inspect it before proposing bundled packages or platform skills. Use it as the source of truth for vendored package versions, source commits, package paths, nested platform skill paths, install commands, and safety policy. Resolve `<package-dir>` from the configured package path before showing or running an installer.
+If `bundled-packages.json` exists in this skill, inspect it before proposing bundled packages or platform skills. Use it as the source of truth for vendored package versions, source commits, package paths, nested platform skill paths, activation policy, install commands, and safety policy. Resolve `<package-dir>` from the configured package path before showing or running an installer.
 
 ## AGENTS.md
 
@@ -238,7 +238,7 @@ description: Use when working in <project>, especially for setup, running, build
 
 External plugin recommendations are guidance, not bundled assets. Do not add them to `bundled-skills.json` or `bundled-packages.json` unless the owner explicitly changes the requirement to vendoring.
 
-Use `recommended-external-plugins.json` as the source of truth for known external plugin recommendations. For each configured plugin that matches the owner's platform and is not already available, copy the relevant configured fields into the generated guidance instead of writing plugin-specific prose by hand.
+Use `external-plugins.json` as the source of truth for known external plugin recommendations. Its `activation_policy` requires checking applicable external plugins before onboarding work continues and recording a reason when an applicable install is skipped. For each configured plugin that matches the owner's platform and is not already available, copy the relevant configured fields into the generated guidance instead of writing plugin-specific prose by hand.
 
 When recommending external plugins in `AGENTS.md`, `agents.d/tooling.md`, or a generated project skill, include:
 

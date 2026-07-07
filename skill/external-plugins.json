@@ -1,4 +1,10 @@
 {
+  "activation_policy": {
+    "on_agent_seed_start": "must_check",
+    "missing_action": "must_offer_before_onboarding",
+    "requires_user_approval": true,
+    "skip_reason_required": true
+  },
   "recommended_external_plugins": [
     {
       "name": "superpowers",

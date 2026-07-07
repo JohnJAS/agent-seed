@@ -17,7 +17,7 @@ This repository contains the source and release tooling for the `agent-seed` Cod
 |   |-- packages/          # Bundled multi-platform skill packages
 |   |-- bundled-skills.json
 |   |-- framework-knowledge.json
-|   |-- recommended-external-plugins.json
+|   |-- external-plugins.json
 |   `-- bundled-packages.json
 |-- tools/                 # Maintainer tooling, not included in the skill package
 |   |-- release.mjs
@@ -103,6 +103,6 @@ Do not run the installer without explicit approval. It may write `.opencode/`, `
 - Do not edit generated files under `outputs/`.
 - Keep bundled direct skills registered in `skill/bundled-skills.json`.
 - Keep bundled packages registered in `skill/bundled-packages.json`.
-- Keep recommended external plugins registered in `skill/recommended-external-plugins.json`.
+- Keep recommended external plugins registered in `skill/external-plugins.json`.
 - Keep framework knowledge registered in `skill/framework-knowledge.json`; place built-in framework packs under `skill/references/frameworks/`.
 - Run `make release` before publishing changes so the test and package build both exercise the current tree.
