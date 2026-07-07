@@ -11,7 +11,7 @@ Run one commit-and-push workflow. Treat squash as an optional preparation step, 
 
 - Use the default path for `gitpush`, `/gitpush`, or requests to commit and push current changes.
 - Enable squash mode only when the user explicitly passes `--squash`, says `/gitpush --squash`, or clearly asks to squash the branch before pushing.
-- In squash mode, accept an optional target branch argument. For unqualified names like `develop`, prefer `upstream/develop` when `upstream` exists, then fall back to `origin/develop`. Keep remote-qualified refs like `origin/release` or `upstream/release` unchanged.
+- In squash mode, accept an optional target branch argument. For unqualified names like `develop`, resolve to `upstream/develop` because the squash base should normally be the source repository's integration branch. Use `origin/<target>` only when the user explicitly supplies a remote-qualified ref like `origin/release`. Keep remote-qualified refs like `origin/release` or `upstream/release` unchanged.
 
 ## Workflow
 
@@ -69,13 +69,17 @@ Use `chore: 更新代码` only when the type cannot be inferred.
 git commit -m "提交信息"
 ```
 
-11. Verify a remote exists:
+11. Verify required remotes are configured:
 
 ```bash
 git remote
+git remote get-url origin
+git remote get-url upstream
 ```
 
-12. Push to the user's writable fork remote, normally `origin`:
+If `origin` is missing, stop and tell the user: `origin` must point to the user's fork of the source repository. If `upstream` is missing, stop and tell the user: `upstream` must point to the source repository.
+
+12. Push to the user's writable fork remote, `origin`:
 
 ```bash
 git push origin CURRENT_BRANCH
@@ -118,24 +122,21 @@ production
 prod
 ```
 
-2. Fetch remote refs. Prefer fetching `upstream` when it exists because it normally points to the source repository in fork workflows. Always fetch `origin` because pushes go there:
+2. Verify and fetch remote refs. `origin` must point to the user's fork of the source repository, and `upstream` must point to the source repository. Stop with that guidance if either remote is missing:
 
 ```bash
 git remote
+git remote get-url origin
+git remote get-url upstream
 git fetch origin
-```
-
-If `upstream` is listed by `git remote`, also run:
-
-```bash
 git fetch upstream
 ```
 
 3. Resolve the target branch:
 
 - If the user supplied a remote-qualified target like `upstream/main` or `origin/develop`, use it as given.
-- If the user supplied an unqualified target like `main` or `develop`, prefer `upstream/<target>` when it exists; otherwise use `origin/<target>`.
-- If the user did not supply a target, choose the first existing ref from `upstream/main`, `upstream/master`, `upstream/develop`, then `origin/main`, `origin/master`, `origin/develop`.
+- If the user supplied an unqualified target like `main` or `develop`, resolve it to `upstream/<target>`. Do not fall back to `origin/<target>` unless the user explicitly supplied the remote-qualified `origin/<target>` ref.
+- If the user did not supply a target, choose the first existing ref from `upstream/main`, `upstream/master`, then `upstream/develop`. If none exists, stop and ask the user for an explicit target branch.
 
 Verify the selected target exists:
 
@@ -183,7 +184,7 @@ After this, return to the main workflow at staged-change inspection. The final c
 
 ## Failure Rules
 
-- Stop on any failed precheck, failed fetch, missing remote, missing target branch, detached `HEAD`, protected branch squash, failed commit, or rejected push.
+- Stop on any failed precheck, failed fetch, missing required remote (`origin` or `upstream`), missing target branch, detached `HEAD`, protected branch squash, failed commit, or rejected push.
 - Preserve the relevant Git output in the final error.
 - If `--force-with-lease` rejects the push, do not retry with `--force`.
 
