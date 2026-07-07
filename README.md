@@ -80,9 +80,15 @@ node tools/release.mjs
 ```text
 outputs/agent-seed/
 outputs/agent-seed.zip
+outputs/bundled-skills/<skill>/
+outputs/bundled-skills/<skill>.zip
+outputs/bundled-skills/<skill>-codex/
+outputs/bundled-skills/<skill>-codex.zip
 ```
 
 The expanded directory is useful for inspection. The zip file is the distributable artifact. The zip root contains `SKILL.md` directly, not an extra nested wrapper directory.
+
+Bundled direct skill artifacts are generated from `skill/bundled-skills.json`, not from hard-coded skill names. The plain `<skill>` artifact copies the configured `source_path` as a universal skill root. The `<skill>-codex` artifact starts from the same source and merges the configured Codex overlay, so it can be copied directly into a Codex project-local `skills/<skill>/` directory.
 
 ## Bundled Packages
 

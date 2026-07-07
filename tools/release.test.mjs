@@ -33,6 +33,69 @@ test("releaseSkill creates an expanded skill directory and zip package", async (
   }
 });
 
+test("releaseSkill packages bundled direct skills from the manifest", async () => {
+  const rootDir = await mkdtemp(path.join(tmpdir(), "agent-seed-release-bundled-"));
+
+  try {
+    const skillDir = path.join(rootDir, "skill");
+    const bundledSkillDir = path.join(skillDir, "bundled-skills", "alpha-tool", "skill");
+    const codexOverlayDir = path.join(skillDir, "bundled-skills", "alpha-tool", "overlays", "codex");
+
+    await mkdir(path.join(bundledSkillDir, "references"), { recursive: true });
+    await mkdir(path.join(codexOverlayDir, "agents"), { recursive: true });
+    await writeFile(path.join(skillDir, "SKILL.md"), "---\nname: agent-seed\n---\n");
+    await writeFile(path.join(bundledSkillDir, "SKILL.md"), "---\nname: alpha-tool\n---\n");
+    await writeFile(path.join(bundledSkillDir, "references", "guide.md"), "# Alpha\n");
+    await writeFile(path.join(codexOverlayDir, "agents", "openai.yaml"), "version: 1\n");
+    await writeFile(
+      path.join(skillDir, "bundled-skills.json"),
+      `${JSON.stringify(
+        {
+          bundled_skills: [
+            {
+              name: "alpha-tool",
+              source_path: "bundled-skills/alpha-tool/skill",
+              platforms: [
+                {
+                  platform: "codex",
+                  overlay_path: "bundled-skills/alpha-tool/overlays/codex",
+                },
+              ],
+            },
+          ],
+        },
+        null,
+        2,
+      )}\n`,
+    );
+
+    await releaseSkill({
+      rootDir,
+      skillDir: path.join(rootDir, "skill"),
+      outputDir: path.join(rootDir, "outputs"),
+    });
+
+    const bundledOutputDir = path.join(rootDir, "outputs", "bundled-skills");
+    assert.equal(
+      await readFile(path.join(bundledOutputDir, "alpha-tool", "SKILL.md"), "utf8"),
+      "---\nname: alpha-tool\n---\n",
+    );
+    assert.equal(
+      await readFile(path.join(bundledOutputDir, "alpha-tool", "references", "guide.md"), "utf8"),
+      "# Alpha\n",
+    );
+    assert.equal(
+      await readFile(path.join(bundledOutputDir, "alpha-tool-codex", "agents", "openai.yaml"), "utf8"),
+      "version: 1\n",
+    );
+
+    assert.ok((await stat(path.join(bundledOutputDir, "alpha-tool.zip"))).size > 0);
+    assert.ok((await stat(path.join(bundledOutputDir, "alpha-tool-codex.zip"))).size > 0);
+  } finally {
+    await rm(rootDir, { recursive: true, force: true });
+  }
+});
+
 test("external plugins config includes install metadata", async () => {
   const configPath = path.join(process.cwd(), "skill", "external-plugins.json");
   const config = JSON.parse(await readFile(configPath, "utf8"));
