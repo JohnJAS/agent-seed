@@ -1,6 +1,6 @@
 ---
 name: agent-seed
-description: Use when the user asks to distill repository evidence and owner knowledge into agent runbooks, make a repository AI-agent ready, generate or update AGENTS.md/agents.d/CLAUDE.md, prepare Codex/Claude/OpenCode to work in an existing codebase, identify common or private framework conventions during repository scans, capture project setup/build/test/debug/tooling knowledge from a knowledgeable developer, define human review checkpoints for agent self-directed development loops, recommend configured external agent plugins, install or document bundled packages or platform skills, or add newly discovered project knowledge to reusable agent guidance assets.
+description: Use when the user asks to distill repository evidence and owner knowledge into agent runbooks, make a repository AI-agent ready, generate or update AGENTS.md/agents.d/CLAUDE.md, prepare Codex/Claude/codeagent-cli/OpenCode to work in an existing codebase, identify common or private framework conventions during repository scans, capture project setup/build/test/debug/tooling knowledge from a knowledgeable developer, define human review checkpoints for agent self-directed development loops, recommend configured external agent plugins, install or document bundled packages or platform skills, or add newly discovered project knowledge to reusable agent guidance assets.
 ---
 
 # Agent Seed
@@ -9,13 +9,13 @@ Distill repository evidence and owner knowledge into executable agent runbooks, 
 
 Default to senior-developer knowledge distillation. The normal output is `AGENTS.md` plus `agents.d/`; add platform-specific files only for platforms the owner uses, and generate or propose a project-specific skill when repeated workflows should trigger automatically.
 
-This skill can also distribute bundled direct skills listed in `bundled-skills.json` and bundled packages listed in `bundled-packages.json`. A bundled direct skill is a simple skill directory copied into supported project-local platform paths. A bundled package may contain one or more platform-specific skills and may be configured as a default project-local install candidate. Every onboarding run for Codex, Claude Code, OpenCode, or another supported agent must inspect these manifests; when `default_install.offer_by_default` is set, proactively offer the install and run it only after user approval.
+This skill can also distribute bundled direct skills listed in `bundled-skills.json` and bundled packages listed in `bundled-packages.json`. A bundled direct skill is a simple skill directory copied into supported project-local platform paths. A bundled package may contain one or more platform-specific skills and may be configured as a default project-local install candidate. Every onboarding run for Codex, Claude Code, OpenCode, codeagent-cli (cac), or another supported agent must inspect these manifests; when `default_install.offer_by_default` is set, proactively offer the install and run it only after user approval.
 
 ## Activation Preflight
 
 Before scanning, interviewing, generating files, or answering onboarding conclusions, complete the Activation Preflight. First, inspect `external-plugins.json`, `bundled-skills.json`, and `bundled-packages.json`; agents must inspect `external-plugins.json`, `bundled-skills.json`, and `bundled-packages.json` before continuing. Treat each manifest's `activation_policy.on_agent_seed_start: "must_check"` as a hard gate, including in Claude Code and other environments that may not load platform-specific prompts.
 
-After the target root is known, perform a minimal platform-evidence scan inside that root before deciding which manifest entries apply. Identify the current agent platform from the active environment, user request, and platform evidence such as `.codex/`, `skills/`, `.claude/`, `CLAUDE.md`, `.opencode/`, `opencode.json`, or `.opencode.yaml`. Do not treat `AGENTS.md` by itself as proof that Codex project-local skills should be installed. If target-root platform evidence is absent or ambiguous, inspect current agent runtime evidence next, such as the platform that loaded this skill, visible skills, platform-specific prompt metadata, tool names, or explicit user invocation. Ask the owner before inspecting user-level agent configuration, `$CODEX_HOME`, personal/global directories, plugin caches, session history, or installed global skills; use those locations only to identify candidate platforms, not as target-project facts. If runtime or approved user-level evidence reveals multiple platform candidates, ask the owner to choose which agent platform or platforms this project should support before offering installs or generating platform-specific assets. For each configured external plugin that applies to the platform and is not already visible, offer the platform-native install action from `external-plugins.json`. For each bundled direct skill or bundled package with `default_install.offer_by_default: true`, offer the configured project-local install for platforms the owner explicitly uses, repository evidence detects, runtime evidence identifies, or the owner confirms from user-level evidence.
+After the target root is known, perform a minimal platform-evidence scan inside that root before deciding which manifest entries apply. Identify the current agent platform from the active environment, user request, and platform evidence such as `.codex/`, `skills/`, `.claude/`, `CLAUDE.md`, `.cac/`, `.opencode/`, `opencode.json`, or `.opencode.yaml`. Treat `.cac/` as codeagent-cli (cac), a Claude-compatible layout whose project-local files mirror `.claude/` under a different directory name. Do not treat `AGENTS.md` by itself as proof that Codex project-local skills should be installed. If target-root platform evidence is absent or ambiguous, inspect current agent runtime evidence next, such as the platform that loaded this skill, visible skills, platform-specific prompt metadata, tool names, or explicit user invocation. Ask the owner before inspecting user-level agent configuration, `$CODEX_HOME`, personal/global directories, plugin caches, session history, or installed global skills; use those locations only to identify candidate platforms, not as target-project facts. If runtime or approved user-level evidence reveals multiple platform candidates, ask the owner to choose which agent platform or platforms this project should support before offering installs or generating platform-specific assets. For each configured external plugin that applies to the platform and is not already visible, offer the platform-native install action from `external-plugins.json`. For each bundled direct skill or bundled package with `default_install.offer_by_default: true`, offer the configured project-local install for platforms the owner explicitly uses, repository evidence detects, runtime evidence identifies, or the owner confirms from user-level evidence.
 
 Do not continue with onboarding work until each applicable default or recommended item is accepted, declined, already available, platform-inapplicable, or explicitly deferred. Specifically, do not present the scan summary, begin owner interviews, generate files, or claim no installs are needed until this is resolved. Record the reason when an applicable install is skipped. Never run an install command, copy skill files, modify hooks, use network access, or write personal/global directories without owner approval.
 
@@ -27,7 +27,7 @@ Persist the target project's knowledge asset write mode in `.agents/agent-seed.j
 }
 ```
 
-Supported modes are `ask-each-change`, `agent-approve`, and `full-access`. The current user request wins over the project config, then `.agents/agent-seed.json`, then default to `ask-each-change`. Apply this mode to writes under `AGENTS.md`, `agents.d/`, `CLAUDE.md`, `.opencode/`, and generated project skill guidance. If the config file is missing during onboarding, ask whether to create it with the selected mode.
+Supported modes are `ask-each-change`, `agent-approve`, and `full-access`. The current user request wins over the project config, then `.agents/agent-seed.json`, then default to `ask-each-change`. Apply this mode to writes under `AGENTS.md`, `agents.d/`, `CLAUDE.md`, `.cac/`, `.opencode/`, and generated project skill guidance. If the config file is missing during onboarding, ask whether to create it with the selected mode.
 
 Treat external agent workflow suites listed in `external-plugins.json` as recommended platform plugins, not bundled packages, unless the user explicitly asks to vendor them. If a configured plugin applies to the owner's platform and is not visible in the current agent environment or project platform config, recommend installing it through the platform's normal network-backed plugin flow instead of copying its internals into the project.
 
@@ -58,7 +58,7 @@ The output files are internal engineering guides and automation runbooks, not co
 - Do not run install, build, test, migration, deploy, or service-start commands unless the user confirms they are safe in the current environment.
 - Install bundled direct skills according to `bundled-skills.json`: proactively offer configured default project-local installs, install only platforms the owner explicitly uses or the repository evidence detects, and get user approval before copying files into the target project.
 - Install bundled packages according to `bundled-packages.json`: proactively offer configured default project-local installs, but get user approval before running installers that modify the target project.
-- Do not install bundled direct skills or bundled platform skills from packages into personal/global Codex/Claude/OpenCode directories unless the user explicitly asks for personal/global installation.
+- Do not install bundled direct skills or bundled platform skills from packages into personal/global Codex/Claude/codeagent-cli/OpenCode directories unless the user explicitly asks for personal/global installation.
 - Do not store secrets, personal machine paths, private account identifiers, one-off incident chatter, or temporary knowledge in onboarding assets.
 
 ## Progressive Disclosure
@@ -95,7 +95,7 @@ Ask early which workflows should become agent-runnable, which parts usually requ
 Check whether instruction files already exist:
 
 ```bash
-rg --files <target-project-root> -g 'AGENTS.md' -g 'CLAUDE.md' -g 'GEMINI.md' -g '.opencode/*' -g 'opencode.json' -g '.opencode.yaml' -g '.agents/agent-seed.json'
+rg --files <target-project-root> -g 'AGENTS.md' -g 'CLAUDE.md' -g 'GEMINI.md' -g '.cac/*' -g '.opencode/*' -g 'opencode.json' -g '.opencode.yaml' -g '.agents/agent-seed.json'
 ```
 
 If any instruction file exists, read it before doing anything else. Ask whether to update it, replace it, or create a draft alongside it. Do not overwrite without confirmation.
@@ -114,9 +114,9 @@ Read existing files from this evidence set when present:
 - Language/package metadata: `package.json`, lockfiles, `pyproject.toml`, `requirements*.txt`, `Pipfile`, `poetry.lock`, `pom.xml`, Gradle files, `go.mod`, `Cargo.toml`.
 - Build and runtime config: `Makefile`, `justfile`, `Taskfile.yml`, `Dockerfile`, `docker-compose*.yml`.
 - CI/CD: `.github/workflows/*`, `.gitlab-ci.yml`, `Jenkinsfile`.
-- Agent/tool config: `.agents/agent-seed.json`, `opencode.json`, `.opencode.yaml`, `.opencode/`, `.claude/settings.json`.
+- Agent/tool config: `.agents/agent-seed.json`, `opencode.json`, `.opencode.yaml`, `.opencode/`, `.claude/settings.json`, `.cac/settings.json`.
 - Automation folders: `scripts/**`, `tools/**`, `bin/**`, `tasks/**`.
-- Project-bundled packages and skills: `bundled-skills.json`, `bundled-skills/**/SKILL.md`, `bundled-skills/**/agents/openai.yaml`, `bundled-packages.json`, `packages/**/SKILL.md`, `packages/**/skills/**/SKILL.md`, `packages/**/.claude/skills/**/SKILL.md`, `packages/**/.opencode/skills/**/SKILL.md`, `skills/*/SKILL.md`, `skills/**/agents/openai.yaml`, and directly related `scripts/`, `references/`, or `assets/`.
+- Project-bundled packages and skills: `bundled-skills.json`, `bundled-skills/**/SKILL.md`, `bundled-skills/**/agents/openai.yaml`, `bundled-packages.json`, `packages/**/SKILL.md`, `packages/**/skills/**/SKILL.md`, `packages/**/.claude/skills/**/SKILL.md`, `packages/**/.cac/skills/**/SKILL.md`, `packages/**/.opencode/skills/**/SKILL.md`, `skills/*/SKILL.md`, `skills/**/agents/openai.yaml`, and directly related `scripts/`, `references/`, or `assets/`.
 - Linter, formatter, type-checker, and test configuration.
 
 Use the project description and knowledge-holder role from Step 0 to decide which files need deeper reading.
@@ -167,7 +167,7 @@ Normal scope:
 - Platform-specific files such as `CLAUDE.md`, `GEMINI.md`, or `.opencode/` only when the owner uses or requests those agents.
 - A project-specific skill recommendation, and the skill itself when repeated workflows should be shared across future agents or checkouts.
 - Recommended external plugins when a mature platform plugin should be installed through the owner's normal network-backed plugin flow instead of vendored into the generated assets.
-- Bundled direct skills when simple reusable workflows should be copied into project-local Codex, Claude Code, or OpenCode skill directories.
+- Bundled direct skills when simple reusable workflows should be copied into project-local Codex, Claude Code, codeagent-cli, or OpenCode skill directories.
 - Bundled packages or bundled platform skills when reusable sub-workflows should be distributed with the onboarding package.
 
 Use a lightweight `AGENTS.md`-only flow only when the user explicitly asks for a small instruction file or template and does not want a knowledge-distillation session.

@@ -37,6 +37,16 @@
           "verification": "Confirm Claude Code lists the Superpowers plugin or a fresh session recognizes Superpowers."
         },
         {
+          "platform": "codeagent-cli",
+          "install_action": "Run /plugin install superpowers@claude-plugins-official in codeagent-cli if its Claude-compatible plugin command is available.",
+          "detection_evidence": [
+            "codeagent-cli plugin list includes Superpowers.",
+            "Superpowers skills are already available in the codeagent-cli session.",
+            "Project-local codeagent-cli configuration exists under .cac/."
+          ],
+          "verification": "Confirm codeagent-cli lists the Superpowers plugin or a fresh session recognizes Superpowers."
+        },
+        {
           "platform": "opencode",
           "install_action": "Add \"superpowers@git+https://github.com/obra/superpowers.git\" to the plugin array in opencode.json or .opencode.yaml, matching the target project's existing OpenCode config file.",
           "detection_evidence": [
@@ -78,6 +88,18 @@
           "detection_evidence": [
             "HarmonyOS manifests such as oh-package.json5, build-profile.json5, module.json5, or app.json5 exist in the target project.",
             "Project files mention DevEco Studio, DevEco Toolbox, deveco-toolbox, deveco-mcp-server, @deveco-codegenie/mcp, devecocli, @deveco/deveco-cli, ohpm, hvigor, hdc, hilog, emulator, ArkUI, ArkTS, HarmonyOS, or OpenHarmony.",
+            "devecocli --version succeeds in the current environment.",
+            "Owner confirms the project is a HarmonyOS/OpenHarmony/ArkUI/ArkTS application."
+          ],
+          "verification": "Confirm devecocli --version succeeds, then use devecocli docs search or devecocli --help to verify local command availability without modifying the project."
+        },
+        {
+          "platform": "codeagent-cli",
+          "install_action": "Run npm install -g @deveco/deveco-cli@latest after user approval, then use codeagent-cli's Claude-compatible .cac skill layout or adapt generated Claude assets into .cac only with separate approval.",
+          "detection_evidence": [
+            "HarmonyOS manifests such as oh-package.json5, build-profile.json5, module.json5, or app.json5 exist in the target project.",
+            "Project files mention DevEco Studio, DevEco Toolbox, deveco-toolbox, deveco-mcp-server, @deveco-codegenie/mcp, devecocli, @deveco/deveco-cli, ohpm, hvigor, hdc, hilog, emulator, ArkUI, ArkTS, HarmonyOS, or OpenHarmony.",
+            "Project-local codeagent-cli configuration exists under .cac/.",
             "devecocli --version succeeds in the current environment.",
             "Owner confirms the project is a HarmonyOS/OpenHarmony/ArkUI/ArkTS application."
           ],

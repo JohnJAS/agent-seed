@@ -94,14 +94,14 @@ Bundled direct skill artifacts are generated from `skill/bundled-skills.json`, n
 
 ### `git-code-tracker`
 
-- Version: `v1.0.1`
+- Version: `v1.0.3`
 - Source: `https://github.com/yooocen/git-code-tracker.git`
-- Ref: `refs/tags/v1.0.1`
-- Commit: `e1cc62d9fb3f82e2f13ca276be94ce5fcdaf6aa9`
+- Ref: `refs/tags/v1.0.3`
+- Commit: `5ce98664b88ff10d8e8d45fc328dae9493df6ffd`
 - Package path: `skill/packages/git-code-tracker`
 - Project-local installer: `node skill/packages/git-code-tracker/install-to-project.js <target-project>`
 
-Do not run the installer without explicit approval. It may write `.opencode/`, `.claude/`, `.git/hooks`, `.ai-tracking`, `.gitignore`, and `AGENTS.md` in the target project.
+Do not run the installer without explicit approval. It may write `.opencode/`, `.claude/`, `.cac/`, `.git/hooks`, `.ai-tracking`, `.gitignore`, and `AGENTS.md` in the target project.
 
 ## Development Notes
 

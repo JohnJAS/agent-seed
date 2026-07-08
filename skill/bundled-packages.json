@@ -8,13 +8,13 @@
   "bundled_packages": [
     {
       "name": "git-code-tracker",
-      "version": "v1.0.1",
+      "version": "v1.0.3",
       "kind": "multi-platform-skill-package",
       "source": {
         "type": "git",
         "repo": "https://github.com/yooocen/git-code-tracker.git",
-        "ref": "refs/tags/v1.0.1",
-        "commit": "e1cc62d9fb3f82e2f13ca276be94ce5fcdaf6aa9"
+        "ref": "refs/tags/v1.0.3",
+        "commit": "5ce98664b88ff10d8e8d45fc328dae9493df6ffd"
       },
       "path": "packages/git-code-tracker",
       "readme": "packages/git-code-tracker/README.md",
@@ -26,10 +26,13 @@
         "writes": [
           ".opencode/skills/ai-code-tracker",
           ".claude/skills/ai-code-tracker",
+          ".cac/skills/ai-code-tracker",
           ".opencode/plugins/ai-code-tracker.js",
           ".opencode/commands",
           ".claude/commands",
           ".claude/settings.json",
+          ".cac/commands",
+          ".cac/settings.json",
           ".ai-tracking",
           ".git/hooks",
           ".gitignore",
@@ -50,6 +53,13 @@
           "source_path": ".claude/skills/ai-code-tracker",
           "target_path": ".claude/skills/ai-code-tracker",
           "verification": "node .claude/skills/ai-code-tracker/scripts/install.js --check"
+        },
+        {
+          "platform": "codeagent-cli",
+          "name": "ai-code-tracker",
+          "source_path": ".cac/skills/ai-code-tracker",
+          "target_path": ".cac/skills/ai-code-tracker",
+          "verification": "node .cac/skills/ai-code-tracker/scripts/install.js --check"
         }
       ],
       "safety": {

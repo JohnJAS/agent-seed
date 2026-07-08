@@ -202,6 +202,66 @@ test("external plugin config recognizes both OpenCode config file names", async 
   }
 });
 
+test("bundled direct skills support codeagent-cli .cac targets", async () => {
+  const rootDir = process.cwd();
+  const config = JSON.parse(await readFile(path.join(rootDir, "skill", "bundled-skills.json"), "utf8"));
+
+  for (const skill of config.bundled_skills) {
+    const platform = skill.platforms.find((entry) => entry.platform === "codeagent-cli");
+
+    assert.ok(platform, `${skill.name} must define codeagent-cli platform metadata`);
+    assert.equal(platform.target_path, `.cac/skills/${skill.name}`);
+    assert.deepEqual(platform.detection_paths, [".cac"]);
+    assert.equal(platform.verification, `SKILL.md exists at .cac/skills/${skill.name}/SKILL.md`);
+    assert.ok(skill.writes.includes(`.cac/skills/${skill.name}`), `${skill.name} writes must include .cac target`);
+  }
+});
+
+test("git-code-tracker package supports codeagent-cli .cac installation", async () => {
+  const rootDir = process.cwd();
+  const config = JSON.parse(await readFile(path.join(rootDir, "skill", "bundled-packages.json"), "utf8"));
+  const tracker = config.bundled_packages.find((entry) => entry.name === "git-code-tracker");
+  const installer = await readFile(path.join(rootDir, "skill", "packages", "git-code-tracker", "install-to-project.js"), "utf8");
+
+  assert.ok(tracker, "expected git-code-tracker package entry");
+  assert.equal(tracker.version, "v1.0.3");
+  assert.equal(tracker.source.ref, "refs/tags/v1.0.3");
+  assert.equal(tracker.source.commit, "5ce98664b88ff10d8e8d45fc328dae9493df6ffd");
+  assert.ok(tracker.default_install.writes.includes(".cac/skills/ai-code-tracker"));
+  assert.ok(tracker.default_install.writes.includes(".cac/commands"));
+  assert.ok(tracker.default_install.writes.includes(".cac/settings.json"));
+
+  const platform = tracker.platform_skills.find((entry) => entry.platform === "codeagent-cli");
+  assert.ok(platform, "git-code-tracker must define codeagent-cli platform skill metadata");
+  assert.equal(platform.source_path, ".cac/skills/ai-code-tracker");
+  assert.equal(platform.target_path, ".cac/skills/ai-code-tracker");
+  assert.equal(platform.verification, "node .cac/skills/ai-code-tracker/scripts/install.js --check");
+
+  await stat(path.join(rootDir, "skill", "packages", "git-code-tracker", ".cac", "skills", "ai-code-tracker", "SKILL.md"));
+  const cacRuntime = await readFile(
+    path.join(rootDir, "skill", "packages", "git-code-tracker", ".cac", "skills", "ai-code-tracker", "scripts", "bundle.js"),
+    "utf8",
+  );
+  assert.match(cacRuntime, /codeagent-cli/);
+  assert.match(cacRuntime, /\.cac", "settings\.json"/);
+  assert.match(cacRuntime, /\.cac\/skills\/ai-code-tracker\/scripts\/claude-code-hook\.js/);
+  assert.match(installer, /sourceCacSkill/);
+  assert.match(installer, /targetCacSkill/);
+  assert.match(installer, /\.cac/);
+});
+
+test("core instructions recognize codeagent-cli platform evidence", async () => {
+  const rootDir = process.cwd();
+  const skill = await readFile(path.join(rootDir, "skill", "SKILL.md"), "utf8");
+  const outputAssets = await readFile(path.join(rootDir, "skill", "references", "output-assets.md"), "utf8");
+
+  for (const content of [skill, outputAssets]) {
+    assert.match(content, /codeagent-cli/i);
+    assert.match(content, /\bcac\b/i);
+    assert.match(content, /\.cac\//);
+  }
+});
+
 test("gitpush verifies required remotes before creating a commit", async () => {
   const rootDir = process.cwd();
   const skill = await readFile(path.join(rootDir, "skill", "bundled-skills", "gitpush", "skill", "SKILL.md"), "utf8");

@@ -19,13 +19,13 @@ Always generate or update `AGENTS.md` unless the user explicitly asks for anothe
 
 Generate `agents.d/` by default for knowledge distillation. Skip it only when the project is small and the owner explicitly wants everything in a concise `AGENTS.md`.
 
-Generate platform-specific files only for platforms the owner uses or explicitly requests, such as `CLAUDE.md`, `GEMINI.md`, or `.opencode/`. If platforms are unknown, ask before generating platform-specific files.
+Generate platform-specific files only for platforms the owner uses or explicitly requests, such as `CLAUDE.md`, `GEMINI.md`, `.cac/`, or `.opencode/`. If platforms are unknown, ask before generating platform-specific files.
 
 Generate or propose a project-specific skill when repeated workflows should trigger automatically, when the project will be onboarded repeatedly, or when distilled knowledge should be reused across future agents and checkouts.
 
 ## Knowledge Asset Write Mode
 
-Resolve the write mode before creating or editing `AGENTS.md`, `agents.d/`, `CLAUDE.md`, `.opencode/`, generated project skills, or `.agents/agent-seed.json`.
+Resolve the write mode before creating or editing `AGENTS.md`, `agents.d/`, `CLAUDE.md`, `.cac/`, `.opencode/`, generated project skills, or `.agents/agent-seed.json`.
 
 Persist the target project's mode in `.agents/agent-seed.json`:
 
@@ -206,6 +206,7 @@ Use this structure when the project skill needs reusable resources, bundled dire
     <package>/
       README.md
       .claude/skills/<skill>/SKILL.md
+      .cac/skills/<skill>/SKILL.md
       .opencode/skills/<skill>/SKILL.md
 ```
 
@@ -260,13 +261,13 @@ For each bundled direct skill, document:
 
 - Skill name, version, purpose, source path, and supported platforms.
 - Default install mode, whether to offer by default, and whether user approval is required.
-- Platform target paths, overlay paths, and detection evidence for Codex, Claude Code, OpenCode, or other supported tools.
+- Platform target paths, overlay paths, and detection evidence for Codex, Claude Code, codeagent-cli (cac), OpenCode, or other supported tools.
 - Exact copy behavior: copy the `source_path` directory into each selected platform target path, then apply the platform overlay if one is configured.
 - Existing target behavior: stop and ask the user whether to skip, replace, or manually merge when the target path already exists.
 - Verification step after install for each selected platform.
 - Safety level: autonomous, ask first, or never install automatically.
 
-Install direct bundled skills only for platforms the owner explicitly uses or repository evidence detects. Detection evidence includes owner answers and platform-specific project files such as `.codex`, `skills/`, `.claude`, `CLAUDE.md`, `.opencode`, `opencode.json`, or `.opencode.yaml`. Do not treat `AGENTS.md` by itself as proof that Codex project-local skills should be installed. Do not create platform directories for unknown or unused platforms by default.
+Install direct bundled skills only for platforms the owner explicitly uses or repository evidence detects. Detection evidence includes owner answers and platform-specific project files such as `.codex`, `skills/`, `.claude`, `CLAUDE.md`, `.cac`, `.opencode`, `opencode.json`, or `.opencode.yaml`. Treat `.cac/` as codeagent-cli (cac), a Claude-compatible directory layout. Do not treat `AGENTS.md` by itself as proof that Codex project-local skills should be installed. Do not create platform directories for unknown or unused platforms by default.
 
 When `bundled-skills.json` marks `default_install.offer_by_default`, proactively offer to copy the direct skill into the selected project-local platform paths during onboarding. Run the copy only after user approval because it modifies the target project. Do not install bundled direct skills into personal/global skill directories unless the user explicitly asks for personal/global installation.
 
@@ -291,4 +292,4 @@ When `bundled-packages.json` marks `default_install.offer_by_default` for a proj
 
 If the platform supports direct repository-local skill loading, document that path instead of copying files.
 
-The bundled `git-code-tracker` entry is pinned to `v1.0.1` / `e1cc62d9fb3f82e2f13ca276be94ce5fcdaf6aa9`. The package root is `packages/git-code-tracker`; the actual platform skills are `.opencode/skills/ai-code-tracker` and `.claude/skills/ai-code-tracker` inside that package. Prefer its README and `node <package-dir>/install-to-project.js <target-project>` over duplicating manual install details. Its installer is project-local and may write `.opencode/skills/ai-code-tracker`, `.claude/skills/ai-code-tracker`, commands, plugins, hooks, `.ai-tracking`, `.gitignore`, and `AGENTS.md`.
+The bundled `git-code-tracker` entry is pinned to `v1.0.3` / `5ce98664b88ff10d8e8d45fc328dae9493df6ffd`. The package root is `packages/git-code-tracker`; the actual platform skills are `.opencode/skills/ai-code-tracker`, `.claude/skills/ai-code-tracker`, and `.cac/skills/ai-code-tracker` inside that package. Prefer its README and `node <package-dir>/install-to-project.js <target-project>` over duplicating manual install details. Its installer is project-local and may write `.opencode/skills/ai-code-tracker`, `.claude/skills/ai-code-tracker`, `.cac/skills/ai-code-tracker`, commands, plugins, hooks, `.ai-tracking`, `.gitignore`, and `AGENTS.md`.
