@@ -69,6 +69,68 @@
       }
     },
     {
+      "name": "gittag",
+      "version": "local",
+      "kind": "multi-platform-direct-skill",
+      "source_path": "bundled-skills/gittag/skill",
+      "purpose": "Create a Git tag after syncing the fork mainline, then push the exact tag to both origin and upstream.",
+      "default_install": {
+        "mode": "project-local",
+        "offer_by_default": true,
+        "requires_user_approval": true,
+        "install_only_for_detected_or_requested_platforms": true
+      },
+      "platforms": [
+        {
+          "platform": "codex",
+          "target_path": "skills/gittag",
+          "overlay_path": "bundled-skills/gittag/overlays/codex",
+          "detection_paths": [
+            ".codex",
+            "skills"
+          ],
+          "verification": "SKILL.md exists at skills/gittag/SKILL.md"
+        },
+        {
+          "platform": "claude",
+          "target_path": ".claude/skills/gittag",
+          "detection_paths": [
+            ".claude",
+            "CLAUDE.md"
+          ],
+          "verification": "SKILL.md exists at .claude/skills/gittag/SKILL.md"
+        },
+        {
+          "platform": "codeagent-cli",
+          "target_path": ".cac/skills/gittag",
+          "detection_paths": [
+            ".cac"
+          ],
+          "verification": "SKILL.md exists at .cac/skills/gittag/SKILL.md"
+        },
+        {
+          "platform": "opencode",
+          "target_path": ".opencode/skills/gittag",
+          "detection_paths": [
+            ".opencode",
+            "opencode.json",
+            ".opencode.yaml"
+          ],
+          "verification": "SKILL.md exists at .opencode/skills/gittag/SKILL.md"
+        }
+      ],
+      "writes": [
+        "skills/gittag",
+        ".claude/skills/gittag",
+        ".cac/skills/gittag",
+        ".opencode/skills/gittag"
+      ],
+      "safety": {
+        "personal_directory_install_requires_explicit_request": true,
+        "existing_target_requires_user_decision": true
+      }
+    },
+    {
       "name": "gitsync",
       "version": "local",
       "kind": "multi-platform-direct-skill",

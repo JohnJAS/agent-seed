@@ -410,6 +410,28 @@ test("gitpush verifies required remotes before creating a commit", async () => {
   assert.ok(skill.indexOf("git remote get-url upstream") < skill.indexOf('git commit -m "提交信息"'));
 });
 
+test("gittag runs gitsync before local tag creation and pushes tags to both remotes", async () => {
+  const rootDir = process.cwd();
+  const skill = await readFile(path.join(rootDir, "skill", "bundled-skills", "gittag", "skill", "SKILL.md"), "utf8");
+  const overlay = await readFile(
+    path.join(rootDir, "skill", "bundled-skills", "gittag", "overlays", "codex", "agents", "openai.yaml"),
+    "utf8",
+  );
+  const manifest = JSON.parse(await readFile(path.join(rootDir, "skill", "bundled-skills.json"), "utf8"));
+  const entry = manifest.bundled_skills.find((candidate) => candidate.name === "gittag");
+
+  assert.ok(entry, "expected gittag to be registered in bundled-skills.json");
+  assert.match(skill, /REQUIRED SUB-SKILL: Use gitsync/i);
+  assert.ok(skill.indexOf("gitsync") < skill.indexOf("git tag -a TAG_NAME"));
+  assert.ok(skill.indexOf("git remote get-url origin") < skill.indexOf("git tag -a TAG_NAME"));
+  assert.ok(skill.indexOf("git remote get-url upstream") < skill.indexOf("git tag -a TAG_NAME"));
+  assert.match(skill, /git push origin TAG_NAME/);
+  assert.match(skill, /git push upstream TAG_NAME/);
+  assert.match(skill, /git ls-remote --tags origin/);
+  assert.match(skill, /git ls-remote --tags upstream/);
+  assert.match(overlay, /display_name: "GitTag"/);
+});
+
 test("core skill instructions define activation preflight as a hard gate", async () => {
   const skillPath = path.join(process.cwd(), "skill", "SKILL.md");
   const skill = await readFile(skillPath, "utf8");

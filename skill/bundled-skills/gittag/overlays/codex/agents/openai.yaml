@@ -1,0 +1,4 @@
+interface:
+  display_name: "GitTag"
+  short_description: "Create and push a Git tag to origin and upstream."
+  default_prompt: "Use $gittag to create and publish a release tag."
