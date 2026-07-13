@@ -52,7 +52,7 @@ Use `.agents/agent-seed.json` as the unified local Agent Seed config and state f
 }
 ```
 
-This file may contain machine-specific proxy settings or local permission history. It is local state, not a shared onboarding asset. When creating it in a target project, ensure `.gitignore` contains `.agents/agent-seed.json`. To persist proxy settings through the updater, use `node scripts/update-agent-seed.mjs --set-https-proxy <url>` and optionally `--set-no-proxy <hosts>`. In an interactive terminal, if the update check fails with a proxy-like network error and no proxy is configured, the updater may ask for an HTTPS proxy URL, save it here, and retry once.
+This file may contain machine-specific proxy settings or local permission history. It is local state, not a shared onboarding asset. When creating it in a target project, ensure `.gitignore` contains `.agents/agent-seed.json`. To persist proxy settings through the updater, use `node scripts/update-agent-seed.mjs --set-https-proxy <url>` and optionally `--set-no-proxy <hosts>`. If no updater or environment proxy is configured, the updater may reuse Git's `http.proxy`/`https.proxy` settings or, on Windows, the current user's explicit system proxy settings for the GitHub release check. In an interactive terminal, if the update check fails with a proxy-like network error and no proxy is configured, the updater may ask for an HTTPS proxy URL, save it here, and retry once.
 
 ## Activation Preflight
 

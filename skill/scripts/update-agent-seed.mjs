@@ -84,7 +84,7 @@ async function main(argv = process.argv.slice(2)) {
   }
 
   const agentSeedConfig = await readAgentSeedConfig(configPath);
-  let env = buildProxyEnvironment(process.env, agentSeedConfig);
+  let env = await buildProxyEnvironmentWithSystemProxy({ env: process.env, config: agentSeedConfig });
 
   const scriptDir = path.dirname(fileURLToPath(import.meta.url));
   const defaultTargetDir = path.resolve(scriptDir, "..");
@@ -146,6 +146,44 @@ export function buildProxyEnvironment(env, config = {}) {
   applyProxyEnv(result, "HTTP_PROXY", ["HTTP_PROXY", "http_proxy"], proxy.http_proxy ?? proxy.httpProxy);
   applyProxyEnv(result, "ALL_PROXY", ["ALL_PROXY", "all_proxy"], proxy.all_proxy ?? proxy.allProxy);
   applyProxyEnv(result, "NO_PROXY", ["NO_PROXY", "no_proxy"], proxy.no_proxy ?? proxy.noProxy);
+
+  return result;
+}
+
+export async function buildProxyEnvironmentWithSystemProxy({
+  env = process.env,
+  config = {},
+  cwd = process.cwd(),
+  platform = process.platform,
+  commandRunner = runCapture,
+} = {}) {
+  const result = buildProxyEnvironment(env, config);
+  if (hasProxyEnvironment(result)) {
+    return result;
+  }
+
+  const gitProxy = await readGitProxyConfig({ cwd, commandRunner });
+  if (gitProxy) {
+    return buildProxyEnvironment(result, {
+      self_update: {
+        proxy: {
+          https_proxy: gitProxy,
+        },
+      },
+    });
+  }
+
+  const windowsProxy = await readWindowsSystemProxyConfig({ platform, commandRunner });
+  if (windowsProxy.httpsProxy || windowsProxy.noProxy) {
+    return buildProxyEnvironment(result, {
+      self_update: {
+        proxy: {
+          https_proxy: windowsProxy.httpsProxy,
+          no_proxy: windowsProxy.noProxy,
+        },
+      },
+    });
+  }
 
   return result;
 }
@@ -707,6 +745,152 @@ async function run(command, args, options = {}) {
       reject(new Error(`${command} exited with code ${code}`));
     });
   });
+}
+
+async function runCapture(command, args, options = {}) {
+  return new Promise((resolve, reject) => {
+    const child = spawn(command, args, {
+      stdio: ["ignore", "pipe", "pipe"],
+      windowsHide: true,
+      ...options,
+    });
+    const stdout = [];
+    const stderr = [];
+
+    child.stdout.on("data", (chunk) => stdout.push(chunk));
+    child.stderr.on("data", (chunk) => stderr.push(chunk));
+    child.on("error", reject);
+    child.on("exit", (code) => {
+      if (code === 0) {
+        resolve(Buffer.concat(stdout).toString("utf8"));
+        return;
+      }
+
+      const error = new Error(Buffer.concat(stderr).toString("utf8").trim() || `${command} exited with code ${code}`);
+      error.code = code;
+      reject(error);
+    });
+  });
+}
+
+async function readGitProxyConfig({ cwd = process.cwd(), commandRunner = runCapture } = {}) {
+  const commands = [
+    ["git", ["config", "--get-urlmatch", "http.proxy", "https://api.github.com/"]],
+    ["git", ["config", "--get", "https.proxy"]],
+    ["git", ["config", "--get", "http.proxy"]],
+  ];
+
+  for (const [command, args] of commands) {
+    try {
+      const value = (await commandRunner(command, args, { cwd })).trim();
+      if (value) {
+        return value;
+      }
+    } catch {
+      // Git may be unavailable, outside a repository, or have no proxy configured.
+    }
+  }
+
+  return "";
+}
+
+async function readWindowsSystemProxyConfig({ platform = process.platform, commandRunner = runCapture } = {}) {
+  if (platform !== "win32") {
+    return {};
+  }
+
+  const key = "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings";
+
+  try {
+    const proxyEnableOutput = await commandRunner("reg", ["query", key, "/v", "ProxyEnable"]);
+    const proxyEnable = parseRegValue(proxyEnableOutput, "ProxyEnable");
+    if (!/^0x1$/i.test(proxyEnable)) {
+      return {};
+    }
+
+    const proxyServerOutput = await commandRunner("reg", ["query", key, "/v", "ProxyServer"]);
+    const proxyServer = parseRegValue(proxyServerOutput, "ProxyServer");
+    const httpsProxy = normalizeWindowsProxyServer(proxyServer);
+    const noProxy = await readWindowsProxyOverride({ key, commandRunner });
+
+    if (!httpsProxy && !noProxy) {
+      return {};
+    }
+
+    return { httpsProxy, noProxy };
+  } catch {
+    return {};
+  }
+}
+
+async function readWindowsProxyOverride({ key, commandRunner }) {
+  try {
+    const proxyOverrideOutput = await commandRunner("reg", ["query", key, "/v", "ProxyOverride"]);
+    return normalizeWindowsProxyOverride(parseRegValue(proxyOverrideOutput, "ProxyOverride"));
+  } catch {
+    return "";
+  }
+}
+
+function parseRegValue(output, name) {
+  const line = String(output || "")
+    .split(/\r?\n/)
+    .find((entry) => entry.trim().startsWith(name));
+
+  if (!line) {
+    return "";
+  }
+
+  const match = line.trim().match(/^\S+\s+REG_\S+\s+(.+)$/);
+  return match ? match[1].trim() : "";
+}
+
+function normalizeWindowsProxyServer(value) {
+  if (typeof value !== "string" || value.trim() === "") {
+    return "";
+  }
+
+  const entries = value
+    .split(";")
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+  const byScheme = new Map();
+
+  for (const entry of entries) {
+    const separatorIndex = entry.indexOf("=");
+    if (separatorIndex === -1) {
+      byScheme.set("default", entry);
+    } else {
+      byScheme.set(entry.slice(0, separatorIndex).toLowerCase(), entry.slice(separatorIndex + 1));
+    }
+  }
+
+  return normalizeProxyUrl(byScheme.get("https") || byScheme.get("http") || byScheme.get("default") || "");
+}
+
+function normalizeProxyUrl(value) {
+  const proxy = String(value || "").trim();
+  if (!proxy) {
+    return "";
+  }
+
+  if (/^[a-z][a-z0-9+.-]*:\/\//i.test(proxy)) {
+    return proxy;
+  }
+
+  return `http://${proxy}`;
+}
+
+function normalizeWindowsProxyOverride(value) {
+  if (typeof value !== "string" || value.trim() === "") {
+    return "";
+  }
+
+  return value
+    .split(";")
+    .map((entry) => entry.trim())
+    .filter((entry) => entry && entry.toLowerCase() !== "<local>")
+    .join(",");
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1]).href) {

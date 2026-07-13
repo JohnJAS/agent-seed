@@ -301,6 +301,121 @@ test("agent-seed updater persists proxy settings in the unified local config", a
   }
 });
 
+test("agent-seed updater falls back to Git proxy config when no updater proxy is configured", async () => {
+  const updaterPath = path.join(process.cwd(), "skill", "scripts", "update-agent-seed.mjs");
+  const updater = await import(`${pathToFileURL(updaterPath).href}?git-proxy=${Date.now()}`);
+  const calls = [];
+
+  const env = await updater.buildProxyEnvironmentWithSystemProxy({
+    env: {},
+    config: {},
+    commandRunner: async (command, args) => {
+      calls.push([command, args]);
+      return "http://git.proxy.example:8080\n";
+    },
+  });
+
+  assert.equal(env.HTTPS_PROXY, "http://git.proxy.example:8080");
+  assert.equal(calls.length, 1);
+  assert.deepEqual(calls[0], ["git", ["config", "--get-urlmatch", "http.proxy", "https://api.github.com/"]]);
+});
+
+test("agent-seed updater keeps explicit proxy config ahead of Git proxy config", async () => {
+  const updaterPath = path.join(process.cwd(), "skill", "scripts", "update-agent-seed.mjs");
+  const updater = await import(`${pathToFileURL(updaterPath).href}?git-proxy-precedence=${Date.now()}`);
+  let commandCalled = false;
+
+  const env = await updater.buildProxyEnvironmentWithSystemProxy({
+    env: {},
+    config: {
+      self_update: {
+        proxy: {
+          https_proxy: "http://configured.proxy.example:8080",
+        },
+      },
+    },
+    commandRunner: async () => {
+      commandCalled = true;
+      return "http://git.proxy.example:8080\n";
+    },
+  });
+
+  assert.equal(env.HTTPS_PROXY, "http://configured.proxy.example:8080");
+  assert.equal(commandCalled, false);
+});
+
+test("agent-seed updater falls back to Windows system proxy when Git proxy is not configured", async () => {
+  const updaterPath = path.join(process.cwd(), "skill", "scripts", "update-agent-seed.mjs");
+  const updater = await import(`${pathToFileURL(updaterPath).href}?windows-proxy=${Date.now()}`);
+  const calls = [];
+
+  const env = await updater.buildProxyEnvironmentWithSystemProxy({
+    env: {},
+    config: {},
+    platform: "win32",
+    commandRunner: async (command, args) => {
+      calls.push([command, args]);
+      if (command === "git") {
+        throw Object.assign(new Error("not configured"), { code: 1 });
+      }
+
+      if (args.includes("ProxyEnable")) {
+        return [
+          "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings",
+          "    ProxyEnable    REG_DWORD    0x1",
+        ].join("\n");
+      }
+
+      if (args.includes("ProxyServer")) {
+        return [
+          "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings",
+          "    ProxyServer    REG_SZ    http=system.proxy.example:8080;https=secure.proxy.example:8443",
+        ].join("\n");
+      }
+
+      if (args.includes("ProxyOverride")) {
+        return [
+          "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings",
+          "    ProxyOverride    REG_SZ    localhost;127.0.0.1;<local>",
+        ].join("\n");
+      }
+
+      return "";
+    },
+  });
+
+  assert.equal(env.HTTPS_PROXY, "http://secure.proxy.example:8443");
+  assert.equal(env.NO_PROXY, "localhost,127.0.0.1");
+  assert.ok(calls.some(([command, args]) => command === "reg" && args.includes("ProxyServer")));
+});
+
+test("agent-seed updater ignores disabled Windows system proxy", async () => {
+  const updaterPath = path.join(process.cwd(), "skill", "scripts", "update-agent-seed.mjs");
+  const updater = await import(`${pathToFileURL(updaterPath).href}?windows-proxy-disabled=${Date.now()}`);
+
+  const env = await updater.buildProxyEnvironmentWithSystemProxy({
+    env: {},
+    config: {},
+    platform: "win32",
+    commandRunner: async (command, args) => {
+      if (command === "git") {
+        throw Object.assign(new Error("not configured"), { code: 1 });
+      }
+
+      if (args.includes("ProxyEnable")) {
+        return [
+          "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings",
+          "    ProxyEnable    REG_DWORD    0x0",
+        ].join("\n");
+      }
+
+      return "";
+    },
+  });
+
+  assert.equal(env.HTTPS_PROXY, undefined);
+});
+
 test("agent-seed updater identifies likely missing-proxy network failures", async () => {
   const updaterPath = path.join(process.cwd(), "skill", "scripts", "update-agent-seed.mjs");
   const updater = await import(`${pathToFileURL(updaterPath).href}?proxy-error=${Date.now()}`);
