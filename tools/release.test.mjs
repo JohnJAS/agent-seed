@@ -670,14 +670,19 @@ test("git-code-tracker package supports codeagent-cli .cac installation", async 
   assert.equal(platform.target_path, ".cac/skills/ai-code-tracker");
   assert.equal(platform.verification, "node .cac/skills/ai-code-tracker/scripts/install.js --check");
 
-  await stat(path.join(rootDir, "skill", "packages", "git-code-tracker", ".cac", "skills", "ai-code-tracker", "SKILL.md"));
-  const cacRuntime = await readFile(
-    path.join(rootDir, "skill", "packages", "git-code-tracker", ".cac", "skills", "ai-code-tracker", "scripts", "bundle.js"),
-    "utf8",
-  );
-  assert.match(cacRuntime, /codeagent-cli/);
+  const cacSkillDir = path.join(rootDir, "skill", "packages", "git-code-tracker", ".cac", "skills", "ai-code-tracker");
+  await stat(path.join(cacSkillDir, "SKILL.md"));
+  await stat(path.join(cacSkillDir, "lib", "index.js"));
+  const cacInstallScript = await readFile(path.join(cacSkillDir, "scripts", "install.js"), "utf8");
+  const cacHookScript = await readFile(path.join(cacSkillDir, "scripts", "claude-code-hook.js"), "utf8");
+  const cacRuntime = await readFile(path.join(cacSkillDir, "lib", "cli", "install.js"), "utf8");
+  assert.match(cacInstallScript, /from "\.\.\/lib\/index\.js"/);
+  assert.match(cacInstallScript, /runInstall/);
+  assert.match(cacHookScript, /from "\.\.\/lib\/index\.js"/);
+  assert.match(cacHookScript, /runClaudeCodeHook/);
+  assert.match(cacRuntime, /tool === "codeagent-cli"/);
   assert.match(cacRuntime, /\.cac", "settings\.json"/);
-  assert.match(cacRuntime, /\.cac\/skills\/ai-code-tracker\/scripts\/claude-code-hook\.js/);
+  assert.match(cacRuntime, /tool === "codeagent-cli" \? "\.cac" : "\.claude"/);
   assert.match(installer, /sourceCacSkill/);
   assert.match(installer, /targetCacSkill/);
   assert.match(installer, /\.cac/);
@@ -725,28 +730,51 @@ test("git-code-tracker platform skill docs and AGENTS rules are platform-specifi
   const packageDir = path.join(rootDir, "skill", "packages", "git-code-tracker");
   const claudeSkill = await readFile(path.join(packageDir, ".claude", "skills", "ai-code-tracker", "SKILL.md"), "utf8");
   const cacSkill = await readFile(path.join(packageDir, ".cac", "skills", "ai-code-tracker", "SKILL.md"), "utf8");
-  const claudeBundle = await readFile(
-    path.join(packageDir, ".claude", "skills", "ai-code-tracker", "scripts", "bundle.js"),
-    "utf8",
-  );
-  const cacBundle = await readFile(path.join(packageDir, ".cac", "skills", "ai-code-tracker", "scripts", "bundle.js"), "utf8");
+  const claudeInstallScript = await readFile(path.join(packageDir, ".claude", "skills", "ai-code-tracker", "scripts", "install.js"), "utf8");
+  const cacInstallScript = await readFile(path.join(packageDir, ".cac", "skills", "ai-code-tracker", "scripts", "install.js"), "utf8");
+  const claudeTargetDir = await mkdtemp(path.join(tmpdir(), "agent-seed-tracker-claude-"));
+  const cacTargetDir = await mkdtemp(path.join(tmpdir(), "agent-seed-tracker-cac-"));
 
-  assert.match(claudeSkill, /node \.claude\/skills\/ai-code-tracker\/scripts\/install\.js --check/);
-  assert.doesNotMatch(claudeSkill, /\.opencode\/skills\/ai-code-tracker\/scripts\/install\.js/);
-  assert.doesNotMatch(claudeSkill, /current opencode session/);
+  try {
+    assert.match(claudeSkill, /node \.claude\/skills\/ai-code-tracker\/scripts\/install\.js --check/);
+    assert.match(claudeSkill, /current Claude Code session/);
+    assert.doesNotMatch(claudeSkill, /\.opencode\/skills\/ai-code-tracker\/scripts\/install\.js/);
+    assert.doesNotMatch(claudeSkill, /current opencode session/);
+    assert.match(claudeInstallScript, /from "\.\.\/lib\/index\.js"/);
+    assert.match(claudeInstallScript, /runInstall/);
 
-  assert.match(cacSkill, /current codeagent-cli session/);
-  assert.doesNotMatch(cacSkill, /current opencode session/);
+    assert.match(cacSkill, /current codeagent-cli session/);
+    assert.doesNotMatch(cacSkill, /current opencode session/);
+    assert.match(cacInstallScript, /from "\.\.\/lib\/index\.js"/);
+    assert.match(cacInstallScript, /runInstall/);
 
-  assert.match(claudeBundle, /skillLabel: "Claude Code"/);
-  assert.match(claudeBundle, /restart the current Claude Code session/);
-  assert.ok(claudeBundle.includes("load the ${info.skillLabel} skill \\`ai-code-tracker\\`"));
-  assert.doesNotMatch(claudeBundle, /load the opencode skill `ai-code-tracker`/);
+    await execFileAsync("git", ["init"], { cwd: claudeTargetDir });
+    await execFileAsync(process.execPath, [
+      path.join(packageDir, "install-to-project.js"),
+      claudeTargetDir,
+      "--platform",
+      "claude",
+    ]);
+    const claudeAgents = await readFile(path.join(claudeTargetDir, "AGENTS.md"), "utf8");
+    assert.match(claudeAgents, /load the Claude Code skill `ai-code-tracker`/);
+    assert.match(claudeAgents, /restart the current Claude Code session/);
+    assert.doesNotMatch(claudeAgents, /load the opencode skill `ai-code-tracker`/);
 
-  assert.match(cacBundle, /skillLabel: "codeagent-cli"/);
-  assert.match(cacBundle, /restart the current codeagent-cli session/);
-  assert.ok(cacBundle.includes("load the ${info.skillLabel} skill \\`ai-code-tracker\\`"));
-  assert.doesNotMatch(cacBundle, /load the opencode skill `ai-code-tracker`/);
+    await execFileAsync("git", ["init"], { cwd: cacTargetDir });
+    await execFileAsync(process.execPath, [
+      path.join(packageDir, "install-to-project.js"),
+      cacTargetDir,
+      "--platform",
+      "codeagent-cli",
+    ]);
+    const cacAgents = await readFile(path.join(cacTargetDir, "AGENTS.md"), "utf8");
+    assert.match(cacAgents, /load the codeagent-cli skill `ai-code-tracker`/);
+    assert.match(cacAgents, /restart the current codeagent-cli session/);
+    assert.doesNotMatch(cacAgents, /load the opencode skill `ai-code-tracker`/);
+  } finally {
+    await rm(claudeTargetDir, { recursive: true, force: true });
+    await rm(cacTargetDir, { recursive: true, force: true });
+  }
 });
 
 test("core instructions recognize codeagent-cli platform evidence", async () => {
@@ -960,9 +988,11 @@ test("external plugin prose stays configuration driven", async () => {
   ]);
   const config = JSON.parse(await readFile(configPath, "utf8"));
   const pluginTerms = config.recommended_external_plugins.flatMap((plugin) => [plugin.name, plugin.display_name]);
+  const vendoredPackageDir = path.normalize(path.join(rootDir, "skill", "packages"));
   const files = [path.join(rootDir, "README.md"), ...(await markdownFiles(path.join(rootDir, "skill")))]
     .filter((filePath) => ![configPath, skillPath].map((allowedPath) => path.normalize(allowedPath)).includes(path.normalize(filePath)))
-    .filter((filePath) => !frameworkPackPaths.has(path.normalize(filePath)));
+    .filter((filePath) => !frameworkPackPaths.has(path.normalize(filePath)))
+    .filter((filePath) => !path.normalize(filePath).startsWith(vendoredPackageDir + path.sep));
 
   for (const filePath of files) {
     const content = await readFile(filePath, "utf8");
