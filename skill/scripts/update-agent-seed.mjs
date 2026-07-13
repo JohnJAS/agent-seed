@@ -1,7 +1,11 @@
 import { spawn } from "node:child_process";
 import { cp, mkdir, mkdtemp, readFile, rename, rm, writeFile } from "node:fs/promises";
+import http from "node:http";
+import https from "node:https";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import { createInterface } from "node:readline/promises";
+import tls from "node:tls";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 const DEFAULT_ASSET_NAME = "agent-seed.zip";
@@ -80,12 +84,7 @@ async function main(argv = process.argv.slice(2)) {
   }
 
   const agentSeedConfig = await readAgentSeedConfig(configPath);
-  const env = buildProxyEnvironment(process.env, agentSeedConfig);
-  const reexec = getEnvProxyReexecArgs({ env });
-  if (reexec) {
-    await run(process.execPath, reexec.nodeArgs, { env: reexec.env });
-    return;
-  }
+  let env = buildProxyEnvironment(process.env, agentSeedConfig);
 
   const scriptDir = path.dirname(fileURLToPath(import.meta.url));
   const defaultTargetDir = path.resolve(scriptDir, "..");
@@ -98,7 +97,24 @@ async function main(argv = process.argv.slice(2)) {
   }
 
   const currentVersion = options.currentVersion || versionMetadata.version || "v0.0.0";
-  const latestRelease = await fetchLatestRelease(repository);
+  let latestRelease;
+  try {
+    latestRelease = await fetchLatestRelease(repository, { env });
+  } catch (error) {
+    const retryEnv = await promptForProxyAfterNetworkError({
+      error,
+      configPath,
+      env,
+      json: options.json,
+    });
+
+    if (!retryEnv) {
+      throw withProxyGuidance(error);
+    }
+
+    env = retryEnv;
+    latestRelease = await fetchLatestRelease(repository, { env });
+  }
   const updatePlan = buildUpdatePlan({
     currentVersion,
     latestRelease,
@@ -118,7 +134,7 @@ async function main(argv = process.argv.slice(2)) {
     return;
   }
 
-  await applyUpdate({ targetDir, asset: updatePlan.asset });
+  await applyUpdate({ targetDir, asset: updatePlan.asset, requestOptions: { env } });
   console.log(`agent-seed updated in ${targetDir}`);
 }
 
@@ -196,6 +212,82 @@ export function getEnvProxyReexecArgs({
       [ENV_PROXY_REEXEC_MARKER]: "1",
     },
   };
+}
+
+export function isLikelyProxyNetworkError(error) {
+  const code = error?.code || error?.cause?.code || "";
+  const message = `${error?.message || ""} ${error?.cause?.message || ""}`;
+  const proxyLikeCodes = new Set([
+    "ECONNREFUSED",
+    "ECONNRESET",
+    "ETIMEDOUT",
+    "ENETUNREACH",
+    "EHOSTUNREACH",
+    "ENOTFOUND",
+    "UND_ERR_CONNECT_TIMEOUT",
+    "UND_ERR_HEADERS_TIMEOUT",
+    "UND_ERR_SOCKET",
+  ]);
+
+  return proxyLikeCodes.has(code) || /ConnectTimeoutError|connect timeout|timed out|ENOTFOUND|getaddrinfo|api\.github\.com:443/i.test(message);
+}
+
+export function withProxyGuidance(error) {
+  if (!isLikelyProxyNetworkError(error)) {
+    return error;
+  }
+
+  const guided = new Error(
+    [
+      error.message,
+      "",
+      "agent-seed could not reach GitHub. If this network requires a proxy, configure one and retry:",
+      "node scripts/update-agent-seed.mjs --set-https-proxy http://proxy.example:8080",
+      "node scripts/update-agent-seed.mjs --set-no-proxy localhost,127.0.0.1",
+    ].join("\n"),
+    { cause: error },
+  );
+  guided.code = error.code;
+  return guided;
+}
+
+export async function promptForProxyAfterNetworkError({
+  error,
+  configPath = DEFAULT_CONFIG_PATH,
+  env = process.env,
+  input = process.stdin,
+  output = process.stderr,
+  isInteractive = Boolean(input.isTTY && output.isTTY),
+  json = false,
+} = {}) {
+  if (json || !isInteractive || !isLikelyProxyNetworkError(error) || hasProxyEnvironment(env)) {
+    return null;
+  }
+
+  const readline = createInterface({ input, output, terminal: Boolean(input.isTTY && output.isTTY) });
+  try {
+    const proxyUrl = (
+      await readline.question(
+        "agent-seed could not reach GitHub. Enter HTTPS proxy URL to save and retry, or leave blank to fail: ",
+      )
+    ).trim();
+
+    if (!proxyUrl) {
+      return null;
+    }
+
+    await writeAgentSeedProxyConfig({
+      configPath,
+      proxy: {
+        httpsProxy: proxyUrl,
+      },
+    });
+
+    const config = await readAgentSeedConfig(configPath);
+    return buildProxyEnvironment(env, config);
+  } finally {
+    readline.close();
+  }
 }
 
 function applyProxyEnv(env, canonicalName, candidateNames, value) {
@@ -333,13 +425,13 @@ async function readVersionMetadata(targetDir) {
   }
 }
 
-async function fetchLatestRelease(repository) {
-  const response = await fetch(`https://api.github.com/repos/${repository}/releases/latest`, {
+async function fetchLatestRelease(repository, requestOptions = {}) {
+  const response = await fetchWithProxy(`https://api.github.com/repos/${repository}/releases/latest`, {
     headers: {
       Accept: "application/vnd.github+json",
       "User-Agent": "agent-seed-updater",
     },
-  });
+  }, requestOptions);
 
   if (!response.ok) {
     throw new Error(`GitHub latest release request failed: ${response.status} ${response.statusText}`);
@@ -348,7 +440,7 @@ async function fetchLatestRelease(repository) {
   return response.json();
 }
 
-export async function applyUpdate({ targetDir, asset }) {
+export async function applyUpdate({ targetDir, asset, requestOptions = {} }) {
   if (!asset.browser_download_url) {
     throw new Error(`Release asset ${asset.name} is missing browser_download_url`);
   }
@@ -359,7 +451,7 @@ export async function applyUpdate({ targetDir, asset }) {
   const backupDir = path.join(tempDir, "backup");
 
   try {
-    await downloadAsset(asset.browser_download_url, zipPath);
+    await downloadAsset(asset.browser_download_url, zipPath, requestOptions);
     await extractZip(zipPath, extractDir);
     await replaceDirectory({ sourceDir: extractDir, targetDir, backupDir });
   } finally {
@@ -367,23 +459,210 @@ export async function applyUpdate({ targetDir, asset }) {
   }
 }
 
-async function downloadAsset(downloadUrl, zipPath) {
+async function downloadAsset(downloadUrl, zipPath, requestOptions = {}) {
   if (downloadUrl.startsWith("file:")) {
     await cp(fileURLToPath(downloadUrl), zipPath, { force: true });
     return;
   }
 
-  const response = await fetch(downloadUrl, {
+  const response = await fetchWithProxy(downloadUrl, {
     headers: {
       "User-Agent": "agent-seed-updater",
     },
-  });
+  }, requestOptions);
 
   if (!response.ok) {
     throw new Error(`Download failed: ${response.status} ${response.statusText}`);
   }
 
   await writeFile(zipPath, Buffer.from(await response.arrayBuffer()));
+}
+
+async function fetchWithProxy(url, init = {}, { env = process.env, fetchImpl = fetch, maxRedirects = 5 } = {}) {
+  const proxyUrl = resolveProxyForUrl(url, env);
+  if (!proxyUrl) {
+    return fetchImpl(url, init);
+  }
+
+  return fetchViaHttpProxy(url, init, { env, maxRedirects });
+}
+
+export function resolveProxyForUrl(url, env = process.env) {
+  const requestUrl = new URL(url);
+  const noProxy = env.NO_PROXY || env.no_proxy || "";
+  if (matchesNoProxy(requestUrl.hostname, noProxy)) {
+    return "";
+  }
+
+  const candidateNames =
+    requestUrl.protocol === "https:"
+      ? ["HTTPS_PROXY", "https_proxy", "ALL_PROXY", "all_proxy"]
+      : ["HTTP_PROXY", "http_proxy", "ALL_PROXY", "all_proxy"];
+
+  for (const name of candidateNames) {
+    if (typeof env[name] === "string" && env[name].trim() !== "") {
+      return env[name].trim();
+    }
+  }
+
+  return "";
+}
+
+function matchesNoProxy(hostname, noProxy) {
+  if (typeof noProxy !== "string" || noProxy.trim() === "") {
+    return false;
+  }
+
+  const host = hostname.toLowerCase();
+  return noProxy
+    .split(",")
+    .map((entry) => entry.trim().toLowerCase())
+    .filter(Boolean)
+    .some((entry) => {
+      if (entry === "*") {
+        return true;
+      }
+
+      if (entry.startsWith(".")) {
+        return host.endsWith(entry);
+      }
+
+      return host === entry || host.endsWith(`.${entry}`);
+    });
+}
+
+async function fetchViaHttpProxy(url, init = {}, { env = process.env, maxRedirects = 5 } = {}) {
+  const proxyUrl = resolveProxyForUrl(url, env);
+  const response = await requestViaHttpProxy(url, init, proxyUrl);
+
+  if (isRedirect(response.status) && response.headers.location && maxRedirects > 0) {
+    const nextUrl = new URL(response.headers.location, url).href;
+    return fetchViaHttpProxy(nextUrl, init, { env, maxRedirects: maxRedirects - 1 });
+  }
+
+  return response;
+}
+
+function isRedirect(status) {
+  return [301, 302, 303, 307, 308].includes(status);
+}
+
+async function requestViaHttpProxy(url, init, proxyUrl) {
+  const requestUrl = new URL(url);
+  const proxy = new URL(proxyUrl);
+
+  if (requestUrl.protocol !== "https:" || proxy.protocol !== "http:") {
+    throw new Error("agent-seed proxy support currently requires an http:// proxy for https:// update URLs.");
+  }
+
+  const agent = createHttpProxyAgent(proxy);
+
+  return new Promise((resolve, reject) => {
+    const request = https.request(
+      requestUrl,
+      {
+        method: init.method || "GET",
+        headers: init.headers || {},
+        agent,
+      },
+      (response) => {
+        const chunks = [];
+
+        response.on("data", (chunk) => chunks.push(chunk));
+        response.on("end", () => {
+          resolve(
+            new BufferedResponse({
+              status: response.statusCode || 0,
+              statusText: response.statusMessage || "",
+              headers: response.headers,
+              body: Buffer.concat(chunks),
+            }),
+          );
+        });
+      },
+    );
+
+    request.setTimeout(30_000, () => {
+      request.destroy(Object.assign(new Error("Request timed out"), { code: "ETIMEDOUT" }));
+    });
+    request.on("error", reject);
+    request.end(init.body);
+  });
+}
+
+function createHttpProxyAgent(proxy) {
+  return new https.Agent({
+    keepAlive: false,
+    createConnection(options, callback) {
+      const targetHost = options.hostname || options.host;
+      const targetPort = options.port || 443;
+      const headers = {
+        Host: `${targetHost}:${targetPort}`,
+      };
+
+      if (proxy.username || proxy.password) {
+        headers["Proxy-Authorization"] = `Basic ${Buffer.from(
+          `${decodeURIComponent(proxy.username)}:${decodeURIComponent(proxy.password)}`,
+        ).toString("base64")}`;
+      }
+
+      const connectRequest = http.request({
+        host: proxy.hostname,
+        port: proxy.port || 80,
+        method: "CONNECT",
+        path: `${targetHost}:${targetPort}`,
+        headers,
+      });
+
+      let settled = false;
+      const finish = (error, socket) => {
+        if (settled) {
+          return;
+        }
+
+        settled = true;
+        callback(error, socket);
+      };
+
+      connectRequest.on("connect", (response, socket) => {
+        if (response.statusCode !== 200) {
+          socket.destroy();
+          finish(new Error(`Proxy CONNECT failed: ${response.statusCode} ${response.statusMessage || ""}`.trim()));
+          return;
+        }
+
+        const tlsSocket = tls.connect({
+          socket,
+          servername: targetHost,
+        });
+        tlsSocket.once("secureConnect", () => finish(null, tlsSocket));
+        tlsSocket.once("error", (error) => finish(error));
+      });
+      connectRequest.once("error", (error) => finish(error));
+      connectRequest.end();
+    },
+  });
+}
+
+class BufferedResponse {
+  constructor({ status, statusText, headers, body }) {
+    this.status = status;
+    this.statusText = statusText;
+    this.headers = headers;
+    this.body = body;
+  }
+
+  get ok() {
+    return this.status >= 200 && this.status < 300;
+  }
+
+  async json() {
+    return JSON.parse(this.body.toString("utf8"));
+  }
+
+  async arrayBuffer() {
+    return this.body.buffer.slice(this.body.byteOffset, this.body.byteOffset + this.body.byteLength);
+  }
 }
 
 async function replaceDirectory({ sourceDir, targetDir, backupDir }) {

@@ -3,6 +3,7 @@ import { execFile } from "node:child_process";
 import { mkdir, mkdtemp, readFile, readdir, rm, stat, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import { PassThrough, Readable } from "node:stream";
 import { pathToFileURL } from "node:url";
 import { promisify } from "node:util";
 import test from "node:test";
@@ -298,6 +299,65 @@ test("agent-seed updater persists proxy settings in the unified local config", a
   } finally {
     await rm(rootDir, { recursive: true, force: true });
   }
+});
+
+test("agent-seed updater identifies likely missing-proxy network failures", async () => {
+  const updaterPath = path.join(process.cwd(), "skill", "scripts", "update-agent-seed.mjs");
+  const updater = await import(`${pathToFileURL(updaterPath).href}?proxy-error=${Date.now()}`);
+
+  assert.equal(
+    updater.isLikelyProxyNetworkError(
+      Object.assign(new Error("ConnectTimeoutError: Connect Timeout Error"), { code: "UND_ERR_CONNECT_TIMEOUT" }),
+    ),
+    true,
+  );
+  assert.equal(updater.isLikelyProxyNetworkError(Object.assign(new Error("getaddrinfo ENOTFOUND api.github.com"), { code: "ENOTFOUND" })), true);
+  assert.equal(updater.isLikelyProxyNetworkError(new Error("GitHub latest release request failed: 404 Not Found")), false);
+});
+
+test("agent-seed updater prompts for a proxy after proxy-like network failure and persists it", async () => {
+  const rootDir = await mkdtemp(path.join(tmpdir(), "agent-seed-proxy-prompt-"));
+
+  try {
+    const updaterPath = path.join(process.cwd(), "skill", "scripts", "update-agent-seed.mjs");
+    const updater = await import(`${pathToFileURL(updaterPath).href}?proxy-prompt=${Date.now()}`);
+    const configPath = path.join(rootDir, ".agents", "agent-seed.json");
+
+    const nextEnv = await updater.promptForProxyAfterNetworkError({
+      error: Object.assign(new Error("ConnectTimeoutError: Connect Timeout Error"), { code: "UND_ERR_CONNECT_TIMEOUT" }),
+      configPath,
+      env: {},
+      input: Readable.from(["http://proxy.example:8080\n"]),
+      output: new PassThrough(),
+      isInteractive: true,
+    });
+
+    const config = JSON.parse(await readFile(configPath, "utf8"));
+    assert.equal(config.self_update.proxy.https_proxy, "http://proxy.example:8080");
+    assert.equal(nextEnv.HTTPS_PROXY, "http://proxy.example:8080");
+  } finally {
+    await rm(rootDir, { recursive: true, force: true });
+  }
+});
+
+test("agent-seed updater gives proxy guidance without prompting in json mode", async () => {
+  const updaterPath = path.join(process.cwd(), "skill", "scripts", "update-agent-seed.mjs");
+  const updater = await import(`${pathToFileURL(updaterPath).href}?proxy-guidance=${Date.now()}`);
+  const originalError = Object.assign(new Error("ConnectTimeoutError: Connect Timeout Error"), { code: "UND_ERR_CONNECT_TIMEOUT" });
+
+  const prompted = await updater.promptForProxyAfterNetworkError({
+    error: originalError,
+    configPath: path.join(tmpdir(), "agent-seed-json-proxy.json"),
+    env: {},
+    input: Readable.from(["http://proxy.example:8080\n"]),
+    output: new PassThrough(),
+    isInteractive: true,
+    json: true,
+  });
+  const guidedError = updater.withProxyGuidance(originalError);
+
+  assert.equal(prompted, null);
+  assert.match(guidedError.message, /--set-https-proxy/);
 });
 
 test("agent-seed updater records denied network checks as deferred local state", async () => {
