@@ -1,4 +1,5 @@
 .worktrees/
+.claude
 outputs/
 .agents/agent-seed.json
 .ai-tracking/pending-lines.json
