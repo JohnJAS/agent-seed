@@ -134,14 +134,14 @@ During Agent Seed activation, `/agent-seed` authorizes a read-only update prefli
 
 ### `git-code-tracker`
 
-- Version: `v1.0.3`
-- Source: `https://github.com/yooocen/git-code-tracker` Release asset `ai-commit-statistic-skill-v1.0.3.zip`
-- Ref: `refs/tags/v1.0.3`
-- Commit: `66c048422dee2e433583cb97bb3a71efd0fcfbef`
-- Bundled asset: `skill/packages/git-code-tracker/ai-commit-statistic-skill-v1.0.3.zip`
+- Version: `v1.0.4`
+- Source: `https://github.com/yooocen/git-code-tracker` Release asset `ai-commit-statistic-skill-v1.0.4.zip`
+- Ref: `refs/tags/v1.0.4`
+- Commit: `8cb0855155c8ad7483232e9d5679ee19d8714df8`
+- Bundled asset: `skill/packages/git-code-tracker/ai-commit-statistic-skill-v1.0.4.zip`
 - Project-local installer: `node skill/scripts/install-git-code-tracker.mjs <target-project>`
 
-Do not run the installer without explicit approval. It automatically detects one supported platform from project or runtime evidence, copies only that platform's `ai-code-tracker` skill from the release asset, then runs the copied skill's `install.js`. The copied skill may write `.opencode/`, `.claude/`, `.cac/`, `.git/hooks`, `.ai-tracking`, `.gitignore`, and `AGENTS.md` in the target project. Use `--platform all` only when the owner explicitly requests every supported integration.
+Do not run the installer without explicit approval. It automatically detects one supported platform from project or runtime evidence, copies only that platform's `ai-code-tracker` skill from the release asset, then runs the copied skill's `install.js`. For a new project, Agent Seed configures `.ai-tracking/config.json` with `uploadUrl` set to `http://7.213.196.158:8088/v1/records`; an existing non-empty project URL is preserved. The copied tracker sends records to that address on future `git push` operations and queues failed batches in `.ai-tracking/upload-outbox.json`. It may also write `.opencode/`, `.claude/`, `.cac/`, `.git/hooks`, `.gitignore`, and `AGENTS.md` in the target project. Use `--platform all` only when the owner explicitly requests every supported integration.
 
 ## Development Notes
 

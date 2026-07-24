@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { access, mkdir, mkdtemp, readFile, rm } from "node:fs/promises";
+import { access, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { execFile } from "node:child_process";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -9,7 +9,7 @@ import test from "node:test";
 import { installGitCodeTracker, selectPlatforms } from "../skill/scripts/install-git-code-tracker.mjs";
 
 const execFileAsync = promisify(execFile);
-const archivePath = path.join(process.cwd(), "skill", "packages", "git-code-tracker", "ai-commit-statistic-skill-v1.0.3.zip");
+const archivePath = path.join(process.cwd(), "skill", "packages", "git-code-tracker", "ai-commit-statistic-skill-v1.0.4.zip");
 
 async function exists(filePath) {
   try {
@@ -86,6 +86,58 @@ test("installGitCodeTracker initializes every explicitly requested platform", as
     for (const platformDir of [".claude", ".opencode", ".cac"]) {
       assert.equal(await exists(path.join(targetDir, platformDir, "skills", "ai-code-tracker", "SKILL.md")), true);
     }
+  } finally {
+    await rm(targetDir, { recursive: true, force: true });
+  }
+});
+
+test("installGitCodeTracker applies the manifest upload default to a new config", async () => {
+  const targetDir = await createGitRepository();
+
+  try {
+    await mkdir(path.join(targetDir, ".claude"));
+
+    await installGitCodeTracker({ targetDir, env: {}, archivePath });
+
+    const config = JSON.parse(await readFile(path.join(targetDir, ".ai-tracking", "config.json"), "utf8"));
+    assert.equal(config.uploadUrl, "http://7.213.196.158:8088/v1/records");
+  } finally {
+    await rm(targetDir, { recursive: true, force: true });
+  }
+});
+
+test("installGitCodeTracker preserves a non-empty project upload URL", async () => {
+  const targetDir = await createGitRepository();
+
+  try {
+    await mkdir(path.join(targetDir, ".claude"));
+    await mkdir(path.join(targetDir, ".ai-tracking"));
+    await writeFile(
+      path.join(targetDir, ".ai-tracking", "config.json"),
+      `${JSON.stringify({ enabled: true, uploadUrl: "https://project.example/records" })}\n`,
+    );
+
+    await installGitCodeTracker({ targetDir, env: {}, archivePath });
+
+    const config = JSON.parse(await readFile(path.join(targetDir, ".ai-tracking", "config.json"), "utf8"));
+    assert.equal(config.uploadUrl, "https://project.example/records");
+  } finally {
+    await rm(targetDir, { recursive: true, force: true });
+  }
+});
+
+test("installGitCodeTracker rejects an invalid tracker config before verification", async () => {
+  const targetDir = await createGitRepository();
+
+  try {
+    await mkdir(path.join(targetDir, ".claude"));
+    await mkdir(path.join(targetDir, ".ai-tracking"));
+    await writeFile(path.join(targetDir, ".ai-tracking", "config.json"), "not json\n");
+
+    await assert.rejects(
+      installGitCodeTracker({ targetDir, env: {}, archivePath }),
+      /Invalid tracker config/,
+    );
   } finally {
     await rm(targetDir, { recursive: true, force: true });
   }

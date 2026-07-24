@@ -1,5 +1,5 @@
 import { execFile } from "node:child_process";
-import { access, cp, mkdtemp, rm } from "node:fs/promises";
+import { access, cp, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -7,7 +7,8 @@ import { promisify } from "node:util";
 
 const execFileAsync = promisify(execFile);
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
-const DEFAULT_ARCHIVE_PATH = path.join(scriptDir, "..", "packages", "git-code-tracker", "ai-commit-statistic-skill-v1.0.3.zip");
+const DEFAULT_ARCHIVE_PATH = path.join(scriptDir, "..", "packages", "git-code-tracker", "ai-commit-statistic-skill-v1.0.4.zip");
+const BUNDLED_PACKAGES_PATH = path.join(scriptDir, "..", "bundled-packages.json");
 
 const PLATFORMS = {
   opencode: {
@@ -54,19 +55,21 @@ export async function installGitCodeTracker({
   await assertFile(resolvedArchivePath, "release asset");
 
   const platforms = await selectPlatforms({ targetDir: resolvedTargetDir, platform, env });
+  const uploadConfig = await loadTrackerUploadConfig();
   for (const selectedPlatform of platforms) {
     await installPlatform({
       targetDir: resolvedTargetDir,
       platform: selectedPlatform,
       env,
       archivePath: resolvedArchivePath,
+      uploadConfig,
     });
   }
 
   return { targetDir: resolvedTargetDir, platforms };
 }
 
-async function installPlatform({ targetDir, platform, env, archivePath }) {
+async function installPlatform({ targetDir, platform, env, archivePath, uploadConfig }) {
   const config = PLATFORMS[platform];
   const stagingDir = await mkdtemp(path.join(tmpdir(), "agent-seed-git-code-tracker-"));
 
@@ -83,10 +86,64 @@ async function installPlatform({ targetDir, platform, env, archivePath }) {
     const installScript = path.join(targetSkillDir, "scripts", "install.js");
     const installEnv = { ...env, AI_CODE_TRACKER_PROCESS_TREE: platform };
     await execFileAsync(process.execPath, [installScript], { cwd: targetDir, env: installEnv });
+    await applyUploadDefault({ targetDir, uploadConfig });
     await execFileAsync(process.execPath, [installScript, "--check"], { cwd: targetDir, env: installEnv });
   } finally {
     await rm(stagingDir, { recursive: true, force: true });
   }
+}
+
+async function loadTrackerUploadConfig() {
+  let manifest;
+  try {
+    manifest = JSON.parse(await readFile(BUNDLED_PACKAGES_PATH, "utf8"));
+  } catch (error) {
+    throw new Error(`Unable to read bundled package manifest: ${error.message}`);
+  }
+
+  const tracker = manifest.bundled_packages?.find((entry) => entry.name === "git-code-tracker");
+  const upload = tracker?.upload;
+  if (
+    !upload ||
+    upload.config_path !== ".ai-tracking/config.json" ||
+    typeof upload.default_url !== "string" ||
+    upload.default_url.trim() === "" ||
+    upload.preserve_existing_url !== true
+  ) {
+    throw new Error("Invalid git-code-tracker upload configuration in bundled-packages.json");
+  }
+
+  return {
+    configPath: upload.config_path,
+    defaultUrl: upload.default_url.trim(),
+    preserveExistingUrl: upload.preserve_existing_url,
+  };
+}
+
+async function applyUploadDefault({ targetDir, uploadConfig }) {
+  const configPath = path.resolve(targetDir, uploadConfig.configPath);
+  const relativePath = path.relative(targetDir, configPath);
+  if (relativePath.startsWith("..") || path.isAbsolute(relativePath)) {
+    throw new Error(`Invalid tracker config path: ${uploadConfig.configPath}`);
+  }
+
+  let config;
+  try {
+    config = JSON.parse(await readFile(configPath, "utf8"));
+  } catch (error) {
+    throw new Error(`Invalid tracker config: ${configPath} (${error.message})`);
+  }
+  if (!config || Array.isArray(config) || typeof config !== "object") {
+    throw new Error(`Invalid tracker config: ${configPath} must contain a JSON object`);
+  }
+
+  if (uploadConfig.preserveExistingUrl && typeof config.uploadUrl === "string" && config.uploadUrl.trim() !== "") {
+    return false;
+  }
+
+  config.uploadUrl = uploadConfig.defaultUrl;
+  await writeFile(configPath, `${JSON.stringify(config, null, 2)}\n`, "utf8");
+  return true;
 }
 
 async function extractArchive(archivePath, destinationDir) {

@@ -325,17 +325,26 @@ test("git-code-tracker release asset supports codeagent-cli .cac installation", 
   const tracker = config.bundled_packages.find((entry) => entry.name === "git-code-tracker");
 
   assert.ok(tracker, "expected git-code-tracker package entry");
-  assert.equal(tracker.version, "v1.0.3");
+  assert.equal(tracker.version, "v1.0.4");
   assert.equal(tracker.source.type, "github-release-asset");
-  assert.equal(tracker.source.ref, "refs/tags/v1.0.3");
-  assert.equal(tracker.source.commit, "66c048422dee2e433583cb97bb3a71efd0fcfbef");
-  assert.equal(tracker.source.asset, "ai-commit-statistic-skill-v1.0.3.zip");
-  assert.equal(tracker.asset_path, "packages/git-code-tracker/ai-commit-statistic-skill-v1.0.3.zip");
+  assert.equal(tracker.source.ref, "refs/tags/v1.0.4");
+  assert.equal(tracker.source.commit, "8cb0855155c8ad7483232e9d5679ee19d8714df8");
+  assert.equal(tracker.source.asset, "ai-commit-statistic-skill-v1.0.4.zip");
+  assert.equal(tracker.asset_path, "packages/git-code-tracker/ai-commit-statistic-skill-v1.0.4.zip");
   assert.equal(tracker.default_install.auto_detect_platform, true);
   assert.match(tracker.default_install.command, /scripts\/install-git-code-tracker\.mjs/);
   assert.ok(tracker.default_install.writes.includes(".cac/skills/ai-code-tracker"));
   assert.ok(tracker.default_install.writes.includes(".cac/commands"));
   assert.ok(tracker.default_install.writes.includes(".cac/settings.json"));
+  assert.ok(tracker.default_install.writes.includes(".ai-tracking/config.json"));
+  assert.ok(tracker.default_install.writes.includes(".ai-tracking/upload-outbox.json"));
+  assert.deepEqual(tracker.upload, {
+    config_path: ".ai-tracking/config.json",
+    default_url: "http://7.213.196.158:8088/v1/records",
+    trigger: "git pre-push hook",
+    outbox_path: ".ai-tracking/upload-outbox.json",
+    preserve_existing_url: true,
+  });
 
   const platform = tracker.platform_skills.find((entry) => entry.platform === "codeagent-cli");
   assert.ok(platform, "git-code-tracker must define codeagent-cli platform skill metadata");
@@ -360,12 +369,18 @@ test("git-code-tracker release asset guidance delegates initialization to the co
   assert.match(tracker.default_install.command, /install-git-code-tracker\.mjs/);
   assert.match(outputAssets, /release asset/i);
   assert.match(outputAssets, /copied skill.*install\.js/i);
+  assert.match(outputAssets, /http:\/\/7\.213\.196\.158:8088\/v1\/records/);
+  assert.match(outputAssets, /pre-push/i);
+  assert.match(outputAssets, /upload-outbox\.json/);
   assert.match(readme, /release asset/i);
   assert.match(readme, /copied skill.*install\.js/i);
+  assert.match(readme, /http:\/\/7\.213\.196\.158:8088\/v1\/records/);
+  assert.match(readme, /git push/i);
+  assert.match(readme, /upload-outbox\.json/);
   const packageDir = path.join(rootDir, "skill", "packages", "git-code-tracker");
   assert.deepEqual(
     (await readdir(packageDir)).sort(),
-    ["ai-commit-statistic-skill-v1.0.3.zip"],
+    ["ai-commit-statistic-skill-v1.0.4.zip"],
   );
 });
 

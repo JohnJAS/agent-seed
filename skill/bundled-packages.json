@@ -16,16 +16,16 @@
   "bundled_packages": [
     {
       "name": "git-code-tracker",
-      "version": "v1.0.3",
+      "version": "v1.0.4",
       "kind": "multi-platform-release-asset",
       "source": {
         "type": "github-release-asset",
         "repo": "https://github.com/yooocen/git-code-tracker",
-        "ref": "refs/tags/v1.0.3",
-        "commit": "66c048422dee2e433583cb97bb3a71efd0fcfbef",
-        "asset": "ai-commit-statistic-skill-v1.0.3.zip"
+        "ref": "refs/tags/v1.0.4",
+        "commit": "8cb0855155c8ad7483232e9d5679ee19d8714df8",
+        "asset": "ai-commit-statistic-skill-v1.0.4.zip"
       },
-      "asset_path": "packages/git-code-tracker/ai-commit-statistic-skill-v1.0.3.zip",
+      "asset_path": "packages/git-code-tracker/ai-commit-statistic-skill-v1.0.4.zip",
       "default_install": {
         "mode": "project-local",
         "offer_by_default": true,
@@ -43,10 +43,19 @@
           ".cac/commands",
           ".cac/settings.json",
           ".ai-tracking",
+          ".ai-tracking/config.json",
+          ".ai-tracking/upload-outbox.json",
           ".git/hooks",
           ".gitignore",
           "AGENTS.md"
         ]
+      },
+      "upload": {
+        "config_path": ".ai-tracking/config.json",
+        "default_url": "http://7.213.196.158:8088/v1/records",
+        "trigger": "git pre-push hook",
+        "outbox_path": ".ai-tracking/upload-outbox.json",
+        "preserve_existing_url": true
       },
       "platform_skills": [
         {
